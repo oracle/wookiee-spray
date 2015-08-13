@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Wookiee-spray by Webtrends</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Wookiee-spray</h1>
+        <p>Wookiee Component - Spray</p>
+
+        <p class="view"><a href="https://github.com/Webtrends/wookiee-spray">View the Project on GitHub <small>Webtrends/wookiee-spray</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Webtrends/wookiee-spray/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Webtrends/wookiee-spray/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Webtrends/wookiee-spray">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="wookiee---component-spray-http" class="anchor" href="#wookiee---component-spray-http" aria-hidden="true"><span class="octicon octicon-link"></span></a>Wookiee - Component: Spray (HTTP)</h1>
+
+<p><a href="https://travis-ci.org/Webtrends/wookiee-spray"><img src="https://travis-ci.org/Webtrends/wookiee-spray.svg?branch=master" alt="Build Status"></a> <a href="https://coveralls.io/github/Webtrends/wookiee-spray?branch=master"><img src="https://coveralls.io/repos/Webtrends/wookiee-spray/badge.svg?branch=master&amp;service=github" alt="Coverage Status"></a> <a href="https://github.com/Webtrends/wookiee-spray/releases"><img src="https://img.shields.io/github/release/webtrends/wookiee-spray.svg" alt="Latest Release"></a> <a href="http://www.apache.org/licenses/LICENSE-2.0.txt"><img src="http://img.shields.io/:license-Apache%202-red.svg" alt="License"></a></p>
+
+<p><a href="https://github.com/Webtrends/wookiee">Main Wookiee Project</a></p>
+
+<p>For Configuration information see <a href="docs/config.md">Spray Config</a></p>
+
+<p>The Spray component has both server and client http functionality. The server component will allow connections to the service using spray. The client will allow the user to make requests and receive responses using the Akka actor methodology as it's based. Both are started up if using as a service. If using as a library if you start up the SprayManager manually both server and client will start up.</p>
+
+<p>For working example see <a href="example-http">Wookiee - Http Example</a> or <a href="example-rest">Wookiee - Rest Example</a></p>
+
+<h2>
+<a id="config" class="anchor" href="#config" aria-hidden="true"><span class="octicon octicon-link"></span></a>Config</h2>
+
+<div class="highlight highlight-json"><pre>wookiee-spray {
+  <span class="pl-ii">manager</span> <span class="pl-ii">=</span> <span class="pl-s"><span class="pl-pds">"</span>com.webtrends.harness.component.http.SprayManager<span class="pl-pds">"</span></span>
+  <span class="pl-ii">enabled</span> <span class="pl-ii">=</span> <span class="pl-ii">true</span>
+
+  <span class="pl-ii">#</span> <span class="pl-ii">The</span> <span class="pl-ii">port</span> <span class="pl-ii">to</span> <span class="pl-ii">run</span> <span class="pl-ii">the</span> <span class="pl-ii">http</span> <span class="pl-ii">server</span> <span class="pl-ii">on</span>
+  <span class="pl-ii">http-port</span> <span class="pl-ii">=</span> <span class="pl-ii">8080</span> 
+
+  <span class="pl-ii">#</span> <span class="pl-ii">The</span> <span class="pl-ii">port</span> <span class="pl-ii">to</span> <span class="pl-ii">run</span> <span class="pl-ii">the</span> <span class="pl-ii">websocket</span> <span class="pl-ii">server</span> <span class="pl-ii">on</span>
+  <span class="pl-ii">http-port</span> <span class="pl-ii">=</span> <span class="pl-ii">8081</span> 
+}
+spray {
+  <span class="pl-ii">can</span> <span class="pl-ii">{</span>
+    <span class="pl-ii">server</span> <span class="pl-ii">{</span>
+      <span class="pl-ii">server-header</span> <span class="pl-ii">=</span> <span class="pl-s"><span class="pl-pds">"</span>harness<span class="pl-pds">"</span></span>
+      <span class="pl-ii">request-timeout</span> <span class="pl-ii">=</span> <span class="pl-ii">60s</span>
+      <span class="pl-ii">idle-timeout</span> <span class="pl-ii">=</span> <span class="pl-ii">120s</span>
+
+      <span class="pl-ii">#</span> <span class="pl-ii">Enables/disables</span> <span class="pl-ii">the</span> <span class="pl-ii">addition</span> <span class="pl-ii">of</span> <span class="pl-ii">a</span> <span class="pl-ii">`Remote-Address`</span> <span class="pl-ii">header</span>
+      <span class="pl-ii">#</span> <span class="pl-ii">holding</span> <span class="pl-ii">the</span> <span class="pl-ii">clients</span> <span class="pl-ii">(remote)</span> <span class="pl-ii">IP</span> <span class="pl-ii">address.</span>
+      <span class="pl-ii">remote-address-header</span> <span class="pl-ii">=</span> <span class="pl-ii">on</span>
+      <span class="pl-ii">#</span> <span class="pl-ii">Enables/disables</span> <span class="pl-ii">support</span> <span class="pl-ii">for</span> <span class="pl-ii">statistics</span> <span class="pl-ii">collection</span> <span class="pl-ii">and</span> <span class="pl-ii">querying.</span>
+      <span class="pl-ii">stats-support</span> <span class="pl-ii">=</span> <span class="pl-ii">on</span>
+    }
+    parsing {
+      <span class="pl-ii">max-uri-length</span>: <span class="pl-c1">16</span><span class="pl-ii">k</span>
+    }
+  }
+  client {
+    <span class="pl-ii">idle-timeout</span> <span class="pl-ii">=</span> <span class="pl-ii">120</span> <span class="pl-ii">s</span>
+    <span class="pl-ii">request-timeout</span> <span class="pl-ii">=</span> <span class="pl-ii">60</span> <span class="pl-ii">s</span>
+  }
+  host-connector {
+    <span class="pl-ii">max-connections</span> <span class="pl-ii">=</span> <span class="pl-ii">10</span>
+    <span class="pl-ii">max-retries</span> <span class="pl-ii">=</span> <span class="pl-ii">2</span>
+    <span class="pl-ii">pipelining</span> <span class="pl-ii">=</span> <span class="pl-ii">on</span>
+  }
+}
+akka.actor.deployment {
+  <span class="pl-ii">/system/component/wookiee-spray/spray-server/spray-base</span> <span class="pl-ii">{</span>
+    <span class="pl-ii">router</span> <span class="pl-ii">=</span> <span class="pl-ii">round-robin</span>
+    <span class="pl-ii">nr-of-instances</span> <span class="pl-ii">=</span> <span class="pl-ii">3</span>
+  }
+}</pre></div>
+
+<p>The configuration is fairly straight forward and generally you wouldn't modify these settings too much. The Spray settings are all found in here. So if you need to modify any Spray settings you would just modify them under the Spray key as seen in the example config above.</p>
+
+<h2>
+<a id="spray-server" class="anchor" href="#spray-server" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spray Server</h2>
+
+<p>The SprayManager which is the core component for the Spray component module, extends the SprayServer with the SprayClient and SprayWebSocketServer. The SprayServer, SprayClient and SprayWebsocketServer are started as child actors for the root actor (for this component) SprayManager.</p>
+
+<h3>
+<a id="adding-a-route-to-the-server" class="anchor" href="#adding-a-route-to-the-server" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding a route to the server</h3>
+
+<p>The primary function of having a http server is to allow requests to be made to your service and a subsequent response after some business logic is executed. The easiest way to do this would be to simply create Commands and have Wookiee add the routes automatically. However, a developer can also build the routes for more complicated usage. The routes are based on Spray so for more information on building the routes themselves, head over to <a href="http://spray.io/documentation/1.2.2/">Spray.io Documentation</a>. To add routes manually you can do the following:</p>
+
+<div class="highlight highlight-Scala"><pre><span class="pl-k">class</span> <span class="pl-en">MyService</span> <span class="pl-k">extends</span> <span class="pl-e">SprayService</span> {
+  <span class="pl-k">override</span> <span class="pl-k">def</span> <span class="pl-en">routes</span><span class="pl-k">:</span><span class="pl-en">Routes</span> <span class="pl-k">=</span> manualRoute <span class="pl-c">// or simply create the route inline</span>
+
+  <span class="pl-k">def</span> <span class="pl-en">manualRoute</span><span class="pl-k">:</span><span class="pl-en">Route</span> <span class="pl-k">=</span> {
+    pathPrefix(<span class="pl-en">Segment</span> <span class="pl-k">/</span> <span class="pl-s"><span class="pl-pds">"</span>foo<span class="pl-pds">"</span></span> <span class="pl-k">/</span> <span class="pl-en">Segment</span> <span class="pl-k">/</span> <span class="pl-s"><span class="pl-pds">"</span>bar<span class="pl-pds">"</span></span>) {
+      (seg1, seg2) <span class="pl-k">=&gt;</span>
+        path(<span class="pl-s"><span class="pl-pds">"</span>request<span class="pl-pds">"</span></span>) {
+          get {
+            ctx <span class="pl-k">=&gt;</span> ctx.complete(<span class="pl-s"><span class="pl-pds">"</span>Hello World!<span class="pl-pds">"</span></span>)
+          }
+        }
+    }
+  }  
+}</pre></div>
+
+<p>As you will notice this is no different from how you would create a route in previous versions of Wookiee (Harness) except for extending from SprayService instead of Service. As in previous versions the Plugin (which has been changed to Service) class by default had http built into it. HTTP now is a separate component and used only when requested. SprayService extends from Service and brings all the base functionality of Service along with it. There is also no requirement that a service needs to have http built into it, like using SprayService. If you use commands exclusively your service does not need to extend SprayService</p>
+
+<h4>
+<a id="adding-routes-automagically" class="anchor" href="#adding-routes-automagically" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding routes automagically</h4>
+
+<p>The ability to add routes automagically is as easy as mixing in traits into your commands. See <a href="docs/SprayRoutes.md">SprayRoutes</a> for more information about this.</p>
+
+<h2>
+<a id="spray-client" class="anchor" href="#spray-client" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spray Client</h2>
+
+<p>See <a href="docs/SprayClient.md">SprayClient</a></p>
+
+<h2>
+<a id="spray-websocket-server" class="anchor" href="#spray-websocket-server" aria-hidden="true"><span class="octicon octicon-link"></span></a>Spray WebSocket Server</h2>
+
+<p>The websocket server allows requests to be made to your service with a response after some business logic has been executed. This is accomplished by creating WebSocketWorkers and registering the endpoint they service with Wookiee.
+A websocket worker is created by extending the <code>WebSocketWorker</code> trait and overriding businessLogic as follows:</p>
+
+<div class="highlight highlight-Scala"><pre><span class="pl-k">class</span> <span class="pl-en">ServerWorker</span> <span class="pl-k">extends</span> <span class="pl-e">WebSocketWorker</span> {
+
+  <span class="pl-k">override</span> <span class="pl-k">def</span> <span class="pl-en">businessLogic</span> <span class="pl-k">=</span> ({
+    <span class="pl-k">case</span> <span class="pl-v">x</span>: <span class="pl-en">BinaryFrame</span> <span class="pl-k">=&gt;</span>
+      log.info(<span class="pl-s"><span class="pl-pds">"</span>Server BinaryFrame Received:<span class="pl-pds">"</span></span> <span class="pl-k">+</span> x)
+      sender() <span class="pl-k">!</span> x
+
+    <span class="pl-k">case</span> <span class="pl-v">x</span>: <span class="pl-en">TextFrame</span> <span class="pl-k">=&gt;</span>
+      <span class="pl-k">if</span> (x.payload.length <span class="pl-k">&lt;=</span> <span class="pl-c1">10</span>) {
+        log.info(<span class="pl-s"><span class="pl-pds">"</span>Server TextFrame Received:<span class="pl-pds">"</span></span> <span class="pl-k">+</span> x)
+        sender() <span class="pl-k">!</span> x
+      } <span class="pl-k">else</span> {
+        log.info(<span class="pl-s"><span class="pl-pds">"</span>Server Large TextFrame Received:<span class="pl-pds">"</span></span> <span class="pl-k">+</span> x)
+        sender() <span class="pl-k">!</span> <span class="pl-en">TextFrameStream</span>(<span class="pl-c1">1</span>, <span class="pl-k">new</span> <span class="pl-en">ByteArrayInputStream</span>(x.payload.toArray))
+      }
+
+    <span class="pl-k">case</span> <span class="pl-v">x</span>: <span class="pl-en">HttpRequest</span> <span class="pl-k">=&gt;</span>
+      log.info(<span class="pl-s"><span class="pl-pds">"</span>Server HttpRequest Received<span class="pl-pds">"</span></span>)
+
+    <span class="pl-k">case</span> <span class="pl-v">x</span>: <span class="pl-en">Tcp</span>.<span class="pl-en">ConnectionClosed</span> <span class="pl-k">=&gt;</span>
+      log.info(<span class="pl-s"><span class="pl-pds">"</span>Server Close<span class="pl-pds">"</span></span>)
+  }<span class="pl-k">:</span> <span class="pl-en">Receive</span>) orElse <span class="pl-v">super</span>.businessLogic
+}```
+
+### <span class="pl-en">Adding</span> a <span class="pl-en">WebSocket</span> endpoint to the websocket server
+<span class="pl-en">Endpoints</span> can be added to the <span class="pl-en">WebSocket</span> server by implementing the addWebSocketWorkers function in your service and mapping paths to workers.  <span class="pl-en">An</span> actor will be created <span class="pl-k">for</span> each connection made to the endpoint.  
+<span class="pl-en">The</span> endpoint path will be parsed allowing users to get parameters from the <span class="pl-en">URL</span>. <span class="pl-en">A</span> <span class="pl-en">URL</span> like <span class="pl-c1">'<span class="pl-ii">/account/1/user/2/obj/3</span>'</span> can be created <span class="pl-k">with</span> <span class="pl-e">the</span> string <span class="pl-c1">'<span class="pl-ii">/account/$accId/user/$userId/obj/$objId</span>'</span>. <span class="pl-en">This</span> will then <span class="pl-k">match</span> the <span class="pl-en">URL</span> and assume that any of the path elements starting <span class="pl-k">with</span> <span class="pl-e">$</span> are variables. <span class="pl-en">The</span> variables will be placed in the <span class="pl-en">CommandBean</span> and can be retrieved in the <span class="pl-en">WebSocketWorker</span><span class="pl-c1">'<span class="pl-ii"> businessLogic using the keys accId, userId and objId. The variables will automatically be converted to Integers if it is not a String.</span></span>
+<span class="pl-c1"><span class="pl-ii">```Scala</span></span>
+<span class="pl-c1"><span class="pl-ii">class MyService extends SprayService {</span></span>
+<span class="pl-c1"><span class="pl-ii">  override def addWebSocketWorkers = {</span></span>
+<span class="pl-c1"><span class="pl-ii">    addWebSocketWorker("test", classOf[ServerWorker])</span></span>
+<span class="pl-c1"><span class="pl-ii">    addWebSocketWorker("endpoint2", classOf[MyServerWorker2])</span></span>
+<span class="pl-c1"><span class="pl-ii">    addWebSocketWorker("account/$accId/user/$userId/obj/$objId", classOf[MyServerWorker3])</span></span>
+<span class="pl-c1"><span class="pl-ii">  }</span></span>
+<span class="pl-c1"><span class="pl-ii">}</span></span></pre></div>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Webtrends">Webtrends</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
