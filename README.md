@@ -1,6 +1,6 @@
 # Wookiee - Component: Spray (HTTP)
 
-[![Build Status](https://travis-ci.org/Webtrends/wookiee-metrics.svg?branch=master)](https://travis-ci.org/Webtrends/wookiee-kafka) [![Coverage Status](https://coveralls.io/repos/Webtrends/wookiee-kafka/badge.svg?branch=master&service=github)](https://coveralls.io/github/Webtrends/wookiee-kafka?branch=master) [![Latest Release](https://img.shields.io/github/release/webtrends/wookiee-kafka.svg)](https://github.com/Webtrends/wookiee-kafka/releases) [![License](http://img.shields.io/:license-Apache%202-red.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![Build Status](https://travis-ci.org/Webtrends/wookiee-spray.svg?branch=master)](https://travis-ci.org/Webtrends/wookiee-spray) [![Coverage Status](https://coveralls.io/repos/Webtrends/wookiee-spray/badge.svg?branch=master&service=github)](https://coveralls.io/github/Webtrends/wookiee-spray?branch=master) [![Latest Release](https://img.shields.io/github/release/webtrends/wookiee-spray.svg)](https://github.com/Webtrends/wookiee-spray/releases) [![License](http://img.shields.io/:license-Apache%202-red.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 [Main Wookiee Project](https://github.com/Webtrends/wookiee)
 
@@ -8,7 +8,7 @@ For Configuration information see [Spray Config](docs/config.md)
 
 The Spray component has both server and client http functionality. The server component will allow connections to the service using spray. The client will allow the user to make requests and receive responses using the Akka actor methodology as it's based. Both are started up if using as a service. If using as a library if you start up the SprayManager manually both server and client will start up.
 
-For working example see [Wookiee - Http Example](../../examples/example-http) or [Wookiee - Rest Example](../../examples/example-rest)
+For working example see [Wookiee - Http Example](example-http) or [Wookiee - Rest Example](example-rest)
 
 ## Config
 ```json
