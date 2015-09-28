@@ -1,7 +1,7 @@
 package com.webtrends.harness.component.spray.websocket
 
-import akka.pattern.ask
 import akka.actor.{ActorRef, Props}
+import akka.pattern.ask
 import com.webtrends.harness.command.CommandBean
 import com.webtrends.harness.health.ActorHealth
 import spray.can.server.UHttp
@@ -14,9 +14,9 @@ import scala.util.{Failure, Success}
 /**
  * Created by wallinm on 3/27/15.
  */
-class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceActor with ActorHealth with websocket.WebSocketServerWorker {
+class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceActor with ActorHealth with websocket.WebSocketServerWorker with AckThrottling {
   import scala.concurrent.ExecutionContext.Implicits.global
-  override def receive = health orElse handshaking orElse closeLogic
+  override def receive = health orElse handshaking orElse closeLogic orElse stashing
 
   var worker: Option[ActorRef] = None
   var bean: Option[CommandBean] = None
@@ -49,6 +49,7 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
           case Success (s) =>
             context.become(health orElse businessLogic orElse closeLogic)
             self ! websocket.UpgradedToWebSocket // notify Upgraded to WebSocket protocol
+            unstashAll()
           case Failure (f) =>
             context.stop (self)
         }
@@ -60,7 +61,7 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
 
   def businessLogic: Receive = {
     case Push(msg) =>
-      send(TextFrame(msg))
+      sendWithAck(TextFrame(msg))
     case ev: Http.ConnectionClosed =>
       worker match {
         case Some(w) =>
@@ -79,4 +80,5 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
 
 object CoreWebSocketWorker {
   def props(serverConnection: ActorRef) = Props(classOf[CoreWebSocketWorker], serverConnection)
+    .withMailbox("wookiee-spray.websocket.high-priority-ack-mailbox")
 }
