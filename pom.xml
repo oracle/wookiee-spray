@@ -46,7 +46,7 @@
         </developer>
     </developers>
 
-    <url>http://webtrends.github.io/wookiee-kafka</url>
+    <url>http://webtrends.github.io/wookiee-spray</url>
     <organization>
         <name>webtrends</name>
         <url>http://webtrends.com</url>
