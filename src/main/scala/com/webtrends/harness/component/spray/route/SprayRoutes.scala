@@ -22,7 +22,8 @@ package com.webtrends.harness.component.spray.route
 import akka.actor.{Props, Actor, ActorLogging}
 import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
-import com.webtrends.harness.command.{CommandResponse, Command, CommandBean}
+import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, Command, CommandBean}
+import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import com.webtrends.harness.component.spray.directive.CommandDirectives
 import net.liftweb.json._
@@ -61,7 +62,7 @@ private[route] trait SprayRoutes extends CommandDirectives
   implicit def OutputMarshaller[T <: AnyRef] = liftJsonMarshaller[T]
 
   //override this value if you require a different response code
-  def responseStatusCode = StatusCodes.OK
+  def responseStatusCode: StatusCode = StatusCodes.OK
 
   /**
    * Function that allows you to override the headers for a response. The Map allows you to specifically
@@ -92,8 +93,17 @@ private[route] trait SprayRoutes extends CommandDirectives
           case Some(b) => b.appendMap(params); b
           case None => CommandBean(params)
         }
-        onComplete[CommandResponse[T]](execute(Some(updatedBean)).mapTo[CommandResponse[T]]) {
+        onComplete[BaseCommandResponse[T]](execute(Some(updatedBean)).mapTo[BaseCommandResponse[T]]) {
           case Success(s) =>
+
+            val (status, additionalHeaders) = s match {
+              case scr: SprayCommandResponse[T] =>
+                (scr.status, scr.additionalHeaders)
+              case cr: CommandResponse[T] =>
+                val statusCode = if (s.data.nonEmpty) responseStatusCode else StatusCodes.NoContent
+                (statusCode, List.empty)
+            }
+
             s.data match {
               case Some(data) =>
                 val media = MediaTypes.forExtension(s.responseType) match {
@@ -108,10 +118,14 @@ private[route] trait SprayRoutes extends CommandDirectives
                     mt getOrElse MediaTypes.`application/json`
                 }
                 respondWithMediaType(media) {
-                  complete { responseStatusCode -> data }
+                  respondWithHeaders(additionalHeaders) {
+                    complete {
+                      status -> data
+                    }
+                  }
                 }
               case None =>
-                complete(StatusCodes.NoContent)
+                complete(status)
             }
           case Failure(f) => throw f
         }

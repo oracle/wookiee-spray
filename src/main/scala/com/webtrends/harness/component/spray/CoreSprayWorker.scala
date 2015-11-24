@@ -112,20 +112,20 @@ class CoreSprayWorker extends HttpServiceActor
                 complete((healthActor ? HealthRequest(HealthResponseType.LB)).mapTo[String])
               }
             } ~
-            path("nagios") {
-              //time(nagiosHealthTimer) {
+              path("nagios") {
+                //time(nagiosHealthTimer) {
                 respondPlain {
                   complete((healthActor ? HealthRequest(HealthResponseType.NAGIOS)).mapTo[String])
                 }
-              //}
-            } ~
-            path("full") {
-              //time(healthTimer) {
+                //}
+              } ~
+              path("full") {
+                //time(healthTimer) {
                 respondJson {
                   complete((healthActor ? HealthRequest(HealthResponseType.FULL)).mapTo[ApplicationHealth])
                 }
-              //}
-            }
+                //}
+              }
 
           } ~
             path("metrics") {
