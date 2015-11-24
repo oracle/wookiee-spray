@@ -36,7 +36,7 @@ import scala.concurrent.Future
  */
 sealed abstract class TestCommand extends Command {
   implicit val executionContext = context.dispatcher
-  override def path: String = "/foo/$key/bar/$key2"sbckmr
+  override def path: String = "/foo/$key/bar/$key2"
 
   override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future {
