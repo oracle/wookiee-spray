@@ -19,7 +19,7 @@
 
 package com.webtrends.harness.component.spray.routes
 
-import com.webtrends.harness.command.{CommandException, CommandResponse, CommandBean, Command}
+import com.webtrends.harness.command._
 import com.webtrends.harness.component.spray.route._
 import spray.http.ContentTypes
 import spray.httpx.marshalling.Marshaller
@@ -38,7 +38,7 @@ sealed abstract class TestCommand extends Command {
   implicit val executionContext = context.dispatcher
   override def path: String = "/foo/$key/bar/$key2"
 
-  override def execute[T](bean: Option[CommandBean]): Future[CommandResponse[T]] = {
+  override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future {
       bean match {
         case Some(b) =>
@@ -56,7 +56,7 @@ class BaseTestCommand extends TestCommand with SprayGet with SprayHead with Spra
 case class TestObject(stringKey:String, intKey:Int)
 
 sealed abstract class EntityBase extends TestCommand {
-  override def execute[T](bean: Option[CommandBean]): Future[CommandResponse[T]] = {
+  override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future {
       bean match {
         case Some(b) =>

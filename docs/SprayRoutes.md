@@ -21,7 +21,7 @@ class FooCommand extends Command with SprayGet {
     implicit val executionContext = context.dispatcher
     override def path: String = "/bar"
     override def commandName: String = "Foo"
-    override def execute[T](bean: Option[CommandBean]): Future[CommandResponse[T]] = {
+    override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
         // here is where our business logic
     }
 }
