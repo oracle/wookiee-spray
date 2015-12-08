@@ -21,7 +21,7 @@ package com.webtrends.harness.component.spray.route
 
 import com.typesafe.config.Config
 import com.webtrends.harness.authentication.CIDRRules
-import com.webtrends.harness.component.spray.directive.{CIDRDirectives, CORSDirectives}
+import com.webtrends.harness.component.spray.directive.CIDRDirectives
 import spray.routing._
 
 import scala.collection.mutable.{HashMap, SynchronizedMap}
@@ -29,7 +29,7 @@ import scala.collection.mutable.{HashMap, SynchronizedMap}
 /**
  * @author Michael Cuthbert on 11/14/14.
  */
-object RouteManager extends CORSDirectives with CIDRDirectives {
+object RouteManager extends CIDRDirectives {
   var cidrRules:Option[CIDRRules] = None
   def apply(config:Config) = cidrRules = Some(CIDRRules(config))
 
