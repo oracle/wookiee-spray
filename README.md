@@ -85,6 +85,22 @@ As you will notice this is no different from how you would create a route in pre
 #### Adding routes automagically
 The ability to add routes automagically is as easy as mixing in traits into your commands. See [SprayRoutes](docs/SprayRoutes.md) for more information about this.
 
+## Features of Spray Commands
+If one chose to create a route automagically (see above) by extending Command and one of the Spray[Method] classes then there are some helpful features that come along
+
+### CORS Support
+Simply add the CORSDirectives class to the list of extensions to return CORS headers
+
+### CIDR Support
+Add the CIDRDirectives class to your extensions to filter by CIDR rules
+
+### Authorization
+To implement your own authorization checking simply override the method:
+
+```def authorized(requestContext: RequestContext): Boolean = true```
+
+We will pass the request to this method before going into a matched command
+
 ## Spray Client
 See [SprayClient](docs/SprayClient.md)
 

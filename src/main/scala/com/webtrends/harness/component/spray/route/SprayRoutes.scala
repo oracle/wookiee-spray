@@ -19,13 +19,13 @@
 
 package com.webtrends.harness.component.spray.route
 
-import akka.actor.{Props, Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
-import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, Command, CommandBean}
+import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
-import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import com.webtrends.harness.component.spray.directive.CommandDirectives
+import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import net.liftweb.json._
 import net.liftweb.json.ext.JodaTimeSerializers
 import spray.http._
@@ -35,7 +35,7 @@ import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.routing.directives.MethodDirectives
 
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
  * Used for command functions that are required for all Spray traits that you can add to commands
@@ -75,6 +75,13 @@ private[route] trait SprayRoutes extends CommandDirectives
   def getResponseHeaders : Map[String, List[HttpHeader]] = {
     Map[String, List[HttpHeader]]()
   }
+
+  /**
+    * Override to provide auth functionality before evaluating a command
+    * @param requestContext Full request for evaluation
+    * @return Is this request authorized?
+    */
+  def authorized(requestContext: RequestContext): Boolean = true
 
   /**
    * Function can be used to override any directives that you wish to use at the beginning of
@@ -138,8 +145,10 @@ private[route] trait SprayRoutes extends CommandDirectives
         preRoute {
           httpMethod {
             mapHeaders(getResponseHeaders) {
-              commandPaths(paths) {
-                bean => innerExecute(Some(bean))
+              commandPaths(paths) { bean =>
+                authorize(authorized _) {
+                  innerExecute(Some(bean))
+                }
               }
             }
           }
@@ -213,7 +222,9 @@ sealed protected trait EntityRoutes extends SprayRoutes {
                   po =>
                     bean.appendMap(Map(CommandBean.KeyEntity -> po))
                     mapHeaders(getResponseHeaders) {
-                      innerExecute(Some(bean))
+                      authorize(authorized _) {
+                        innerExecute(Some(bean))
+                      }
                     }
                 }
               }
@@ -289,17 +300,18 @@ trait SprayOptions extends SprayRoutes {
       getRejectionHandler {
         getExceptionHandler {
           preRoute {
-            commandPaths(paths) {
-              bean =>
-                options {
-                  respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
-                    mapHeaders(getResponseHeaders) {
-                      ctx =>
-                        ctx.complete(StatusCodes.OK -> optionsResponse)
-                        ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
+            commandPaths(paths) { bean =>
+              authorize(authorized _) {
+                  options {
+                    respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
+                      mapHeaders(getResponseHeaders) {
+                        ctx =>
+                          ctx.complete(StatusCodes.OK -> optionsResponse)
+                          ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
+                      }
                     }
                   }
-                }
+              }
             }
           }
         }
