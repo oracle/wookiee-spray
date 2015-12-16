@@ -24,6 +24,8 @@ import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
+import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
+import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives}
 import com.webtrends.harness.component.spray.directive.CommandDirectives
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import net.liftweb.json._
@@ -93,6 +95,30 @@ private[route] trait SprayRoutes extends CommandDirectives
     pass
   }
 
+  /**
+    * Used for optional CORS functionality.
+    * See [[CORS.corsPreflight]] for more details
+    */
+  def corsPreflight : Directive0 = {
+    pass
+  }
+
+  /**
+    * Used for optional CORS functionality.
+    * See [[CORS.corsRequest]] for more details
+    */
+  def corsRequest : Directive0 = {
+    pass
+  }
+
+  /**
+    * Used for optional CORS functionality.
+    * See [[CORS.corsResponse]] for more details
+    */
+  def corsResponse : Directive0 = {
+    pass
+  }
+
   protected def innerExecute[T<:AnyRef:Manifest](bean:Option[CommandBean]=None) = {
     parameterMap {
       params =>
@@ -142,12 +168,16 @@ private[route] trait SprayRoutes extends CommandDirectives
   protected def buildRoute(httpMethod:Directive0) : Route = {
     getRejectionHandler {
       getExceptionHandler {
-        preRoute {
-          httpMethod {
-            mapHeaders(getResponseHeaders) {
-              commandPaths(paths) { bean =>
-                authorize(authorized _) {
-                  innerExecute(Some(bean))
+        corsResponse {
+          corsRequest {
+            preRoute {
+              httpMethod {
+                mapHeaders(getResponseHeaders) {
+                  commandPaths(paths) { bean =>
+                    authorize(authorized _) {
+                      innerExecute(Some(bean))
+                    }
+                  }
                 }
               }
             }
@@ -214,20 +244,25 @@ sealed protected trait EntityRoutes extends SprayRoutes {
   protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0) : Route = {
     getRejectionHandler {
       getExceptionHandler {
-        preRoute {
-          commandPaths(paths) {
-            bean =>
-              httpMethod {
-                entity(as[T]) {
-                  po =>
-                    bean.appendMap(Map(CommandBean.KeyEntity -> po))
-                    mapHeaders(getResponseHeaders) {
-                      authorize(authorized _) {
-                        innerExecute(Some(bean))
-                      }
+        corsResponse {
+          corsRequest {
+            preRoute {
+              commandPaths(paths) {
+                bean => {
+                  httpMethod {
+                    entity(as[T]) {
+                      po =>
+                        bean.appendMap(Map(CommandBean.KeyEntity -> po))
+                        mapHeaders(getResponseHeaders) {
+                          authorize(authorized _) {
+                            innerExecute(Some(bean))
+                          }
+                        }
                     }
+                  }
                 }
               }
+            }
           }
         }
       }
@@ -299,18 +334,21 @@ trait SprayOptions extends SprayRoutes {
     respondJson {
       getRejectionHandler {
         getExceptionHandler {
-          preRoute {
-            commandPaths(paths) { bean =>
-              authorize(authorized _) {
-                  options {
-                    respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
-                      mapHeaders(getResponseHeaders) {
-                        ctx =>
-                          ctx.complete(StatusCodes.OK -> optionsResponse)
-                          ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
+          corsPreflight {
+            preRoute {
+              commandPaths(paths) { bean =>
+                  authorize(authorized _) {
+                    options {
+                      respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
+                        mapHeaders(getResponseHeaders) {
+                          ctx =>
+                            ctx.complete(StatusCodes.OK -> optionsResponse)
+                            ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
+                        }
                       }
                     }
                   }
+
               }
             }
           }
