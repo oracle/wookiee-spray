@@ -38,7 +38,7 @@ import spray.routing.authentication.{UserPass, BasicAuth}
 import spray.routing.directives.MethodDirectives
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{Try, Failure, Success}
 
 /**
  * Used for command functions that are required for all Spray traits that you can add to commands
@@ -164,8 +164,13 @@ trait SprayRoutes extends CommandDirectives
                 }
                 respondWithMediaType(media) {
                   respondWithHeaders(additionalHeaders) {
-                    complete {
-                      status -> data
+                    data match {
+                      case streamResponse: SprayStreamResponse =>
+                        new SprayStreamingResponder(streamResponse, context, status).respond
+                      case _ =>
+                        complete {
+                          status -> data
+                        }
                     }
                   }
                 }
@@ -196,24 +201,6 @@ trait SprayRoutes extends CommandDirectives
                 }
               }
             }
-          }
-        }
-      }
-    }
-  }
-
-  case class Ok(remaining:Int)
-
-  def sendStreamingResponse(ctx:RequestContext) : Unit = {
-    context.actorOf {
-      Props {
-        new Actor with ActorLogging {
-          def receive = {
-            case Ok(0) =>
-
-            case Ok(remaining) =>
-
-            case ev:Tcp.ConnectionClosed =>
           }
         }
       }
