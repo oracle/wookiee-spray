@@ -95,11 +95,22 @@ Simply add the CORSDirectives class to the list of extensions to return CORS hea
 Add the CIDRDirectives class to your extensions to filter by CIDR rules
 
 ### Authorization
-To implement your own authorization checking simply override the method:
+NOTE: If it is desired to only allow one of these two types of auth, then you must still override both commands and simply have the undesired auth method return None
 
-```def authorized(requestContext: RequestContext): Boolean = true```
+#### Basic Auth
+To gain basic auth functionality simply override the following method in your command
 
-We will pass the request to this method before going into a matched command
+```override def basicAuth(userPass: Option[UserPass]): Future[Option[String]]```
+
+Then write your logic to check that the user/pass is legit and if so return Some(String), if not, return None to cause Unauthorized to be returned to user
+
+#### OAuth (Bearer Token)
+To gain oauth functionality simply override the following method in your command
+
+```override def tokenAuth(tokenScope: Option[Token]): Future[Option[String]]```
+
+The Token class contains a scope, always 'session', and the token itself which you can write your own logic to check. If the token is legit return Some(String), if not, return None to cause Unauthorized to be returned to user
+
 
 ## Spray Client
 See [SprayClient](docs/SprayClient.md)
