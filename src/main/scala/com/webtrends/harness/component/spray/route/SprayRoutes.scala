@@ -46,7 +46,7 @@ import scala.util.{Failure, Success, Try}
  *
  * @author Michael Cuthbert on 12/5/14.
  */
-private[route] trait SprayRoutes extends CommandDirectives
+trait SprayRoutes extends CommandDirectives
     with CommandRouteHandler
     with LiftJsonSupport {
   this : Command =>
