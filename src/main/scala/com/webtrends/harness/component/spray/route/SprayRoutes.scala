@@ -19,8 +19,6 @@
 
 package com.webtrends.harness.component.spray.route
 
-import akka.actor.{Props, Actor, ActorLogging}
-import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, Command, CommandBean}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
@@ -34,7 +32,6 @@ import spray.httpx.marshalling.ToResponseMarshaller
 import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.routing.directives.MethodDirectives
-
 import scala.util.{Try, Failure, Success}
 
 /**
@@ -143,8 +140,13 @@ private[route] trait SprayRoutes extends CommandDirectives
                 }
                 respondWithMediaType(media) {
                   respondWithHeaders(additionalHeaders) {
-                    complete {
-                      status -> data
+                    data match {
+                      case streamResponse: SprayStreamResponse =>
+                        new SprayStreamingResponder(streamResponse, context, status).respond
+                      case _ =>
+                        complete {
+                          status -> data
+                        }
                     }
                   }
                 }
@@ -170,24 +172,6 @@ private[route] trait SprayRoutes extends CommandDirectives
                 }
               }
             }
-          }
-        }
-      }
-    }
-  }
-
-  case class Ok(remaining:Int)
-
-  def sendStreamingResponse(ctx:RequestContext) : Unit = {
-    context.actorOf {
-      Props {
-        new Actor with ActorLogging {
-          def receive = {
-            case Ok(0) =>
-
-            case Ok(remaining) =>
-
-            case ev:Tcp.ConnectionClosed =>
           }
         }
       }
