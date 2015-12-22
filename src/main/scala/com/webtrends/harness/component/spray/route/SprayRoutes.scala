@@ -19,11 +19,14 @@
 
 package com.webtrends.harness.component.spray.route
 
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
-import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, Command, CommandBean}
+import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
-import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives}
+import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
+import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
 import net.liftweb.json._
 import net.liftweb.json.ext.JodaTimeSerializers
 import spray.http._
@@ -31,7 +34,10 @@ import spray.httpx.LiftJsonSupport
 import spray.httpx.marshalling.ToResponseMarshaller
 import spray.httpx.unmarshalling._
 import spray.routing._
+import spray.routing.authentication.{UserPass, BasicAuth}
 import spray.routing.directives.MethodDirectives
+
+import scala.concurrent.Future
 import scala.util.{Try, Failure, Success}
 
 /**
@@ -40,7 +46,7 @@ import scala.util.{Try, Failure, Success}
  *
  * @author Michael Cuthbert on 12/5/14.
  */
-private[route] trait SprayRoutes extends CommandDirectives
+trait SprayRoutes extends CommandDirectives
     with CommandRouteHandler
     with LiftJsonSupport {
   this : Command =>
@@ -74,10 +80,28 @@ private[route] trait SprayRoutes extends CommandDirectives
   }
 
   /**
+    * Override to provide basic auth functionality before evaluating a command
+    * @param userPass Holds both the user and password send on the header
+    * @return Some(String) if auth successful, None if failed
+    */
+  def basicAuth(userPass: Option[UserPass]): Future[Option[String]] = Future {
+    Some("")
+  }
+
+  /**
+    * Override to provide bearer token auth functionality before evaluating a command, this method
+    * is executed before basicAuth() and by default will fail authentication (causing us to pass
+    * through to basicAuth()) so if only using basic auth there is no need to override this method
+    * @param tokenScope Holds both the token and the scope in which it should be executed
+    * @return Some(String) if auth successful, None if failed
+    */
+  def tokenAuth(tokenScope: Option[Token]): Future[Option[String]] = Future {
+    None
+  }
+
+  /**
    * Function can be used to override any directives that you wish to use at the beginning of
    * the route
-   *
-   * @return
    */
   def preRoute : Directive0 = {
     pass
@@ -166,8 +190,13 @@ private[route] trait SprayRoutes extends CommandDirectives
             preRoute {
               httpMethod {
                 mapHeaders(getResponseHeaders) {
-                  commandPaths(paths) {
-                    bean => innerExecute(Some(bean))
+                  commandPaths(paths) { bean =>
+                    authenticate(OAuth(tokenAuth _, "session")) { info =>
+                      innerExecute(Some(bean))
+                    } ~
+                    authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                      innerExecute(Some(bean))
+                    }
                   }
                 }
               }
@@ -211,24 +240,27 @@ trait SprayGet extends SprayRoutes {
  */
 sealed protected trait EntityRoutes extends SprayRoutes {
   this : Command =>
+  import context.dispatcher
   // default the unmarshaller to lift json unmarshaller
   implicit def InputUnmarshaller[T : Manifest] = liftJsonUnmarshaller[T]
 
-  protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0) : Route = {
+  protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0): Route = {
     getRejectionHandler {
       getExceptionHandler {
         corsResponse {
           corsRequest {
             preRoute {
-              commandPaths(paths) {
-                bean => {
-                  httpMethod {
-                    entity(as[T]) {
-                      po =>
-                        bean.appendMap(Map(CommandBean.KeyEntity -> po))
-                        mapHeaders(getResponseHeaders) {
-                          innerExecute(Some(bean))
-                        }
+              commandPaths(paths) { bean =>
+                httpMethod {
+                  entity(as[T]) { po =>
+                    bean.appendMap(Map(CommandBean.KeyEntity -> po))
+                    mapHeaders(getResponseHeaders) {
+                      authenticate(OAuth(tokenAuth _, "session")) { info =>
+                        innerExecute(Some(bean))
+                      } ~
+                      authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                        innerExecute(Some(bean))
+                      }
                     }
                   }
                 }
@@ -264,6 +296,7 @@ trait SprayDelete extends SprayRoutes {
  */
 trait SprayOptions extends SprayRoutes {
   this : Command =>
+  import context.dispatcher
   addRoute(commandName + "_options", optionsRoute)
 
   implicit def optionsMarshaller = liftJsonMarshaller[JValue]
@@ -296,33 +329,37 @@ trait SprayOptions extends SprayRoutes {
 
   /**
    * Override this function to give the options specific information about the command
-   *
-   * @return
    */
   def optionsResponse : JValue =  parse("""{}""")
 
-  def optionsRoute = {
+  def optionsRoute: Route = {
     respondJson {
       getRejectionHandler {
         getExceptionHandler {
           corsPreflight {
             preRoute {
-              commandPaths(paths) {
-                bean => {
-                  options {
-                    respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
-                      mapHeaders(getResponseHeaders) {
-                        ctx =>
-                          ctx.complete(StatusCodes.OK -> optionsResponse)
-                          ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
-                      }
-                    }
+              commandPaths(paths) { bean =>
+                options {
+                  authenticate(OAuth(tokenAuth _, "session")) { info =>
+                    ctxComplete
+                  } ~
+                  authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                    ctxComplete
                   }
                 }
               }
             }
           }
         }
+      }
+    }
+  }
+
+  def ctxComplete: Route = {
+    respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
+      mapHeaders(getResponseHeaders) { ctx =>
+        ctx.complete(StatusCodes.OK -> optionsResponse)
+        ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
       }
     }
   }

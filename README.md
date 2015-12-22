@@ -85,6 +85,33 @@ As you will notice this is no different from how you would create a route in pre
 #### Adding routes automagically
 The ability to add routes automagically is as easy as mixing in traits into your commands. See [SprayRoutes](docs/SprayRoutes.md) for more information about this.
 
+## Features of Spray Commands
+If one chose to create a route automagically (see above) by extending Command and one of the Spray[Method] classes then there are some helpful features that come along
+
+### CORS Support
+Simply add the CORSDirectives class to the list of extensions to return CORS headers
+
+### CIDR Support
+Add the CIDRDirectives class to your extensions to filter by CIDR rules
+
+### Authorization
+NOTE: If it is desired to only allow one of these two types of auth, then you must still override both commands and simply have the undesired auth method return None
+
+#### Basic Auth
+To gain basic auth functionality simply override the following method in your command
+
+```override def basicAuth(userPass: Option[UserPass]): Future[Option[String]]```
+
+Then write your logic to check that the user/pass is legit and if so return Some(String), if not, return None to cause Unauthorized to be returned to user
+
+#### OAuth (Bearer Token)
+To gain oauth functionality simply override the following method in your command
+
+```override def tokenAuth(tokenScope: Option[Token]): Future[Option[String]]```
+
+The Token class contains a scope, always 'session', and the token itself which you can write your own logic to check. If the token is legit return Some(String), if not, return None to cause Unauthorized to be returned to user
+
+
 ## Spray Client
 See [SprayClient](docs/SprayClient.md)
 
