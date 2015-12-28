@@ -19,14 +19,12 @@
 
 package com.webtrends.harness.component.spray.route
 
-import akka.actor.{Actor, ActorLogging, Props}
-import akka.io.Tcp
 import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
+import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives}
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
-import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
 import net.liftweb.json._
 import net.liftweb.json.ext.JodaTimeSerializers
 import spray.http._
@@ -34,11 +32,11 @@ import spray.httpx.LiftJsonSupport
 import spray.httpx.marshalling.ToResponseMarshaller
 import spray.httpx.unmarshalling._
 import spray.routing._
-import spray.routing.authentication.{UserPass, BasicAuth}
+import spray.routing.authentication.{BasicAuth, UserPass}
 import spray.routing.directives.MethodDirectives
 
 import scala.concurrent.Future
-import scala.util.{Try, Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
  * Used for command functions that are required for all Spray traits that you can add to commands
@@ -82,10 +80,11 @@ trait SprayRoutes extends CommandDirectives
   /**
     * Override to provide basic auth functionality before evaluating a command
     * @param userPass Holds both the user and password send on the header
-    * @return Some(String) if auth successful, None if failed
+    * @return Some(String, String) if auth successful, None if failed, the strings can be anything
+    *         that is desired to be passed down on the SprayCommandBean
     */
-  def basicAuth(userPass: Option[UserPass]): Future[Option[String]] = Future {
-    Some("")
+  def basicAuth(userPass: Option[UserPass]): Future[Option[(String, String)]] = Future {
+    userPass.map(it => Some(it.user, "")).getOrElse(Some("", ""))
   }
 
   /**
@@ -93,9 +92,10 @@ trait SprayRoutes extends CommandDirectives
     * is executed before basicAuth() and by default will fail authentication (causing us to pass
     * through to basicAuth()) so if only using basic auth there is no need to override this method
     * @param tokenScope Holds both the token and the scope in which it should be executed
-    * @return Some(String) if auth successful, None if failed
+    * @return Some(String, String) if auth successful, None if failed, the strings can be anything
+    *         that is desired to be passed down on the SprayCommandBean
     */
-  def tokenAuth(tokenScope: Option[Token]): Future[Option[String]] = Future {
+  def tokenAuth(tokenScope: Option[Token]): Future[Option[(String, String)]] = Future {
     None
   }
 
@@ -192,9 +192,11 @@ trait SprayRoutes extends CommandDirectives
                 mapHeaders(getResponseHeaders) {
                   commandPaths(paths) { bean =>
                     authenticate(OAuth(tokenAuth _, "session")) { info =>
+                      bean.authInfo = Some(info)
                       innerExecute(Some(bean))
                     } ~
                     authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                      bean.authInfo = Some(info)
                       innerExecute(Some(bean))
                     }
                   }
@@ -256,9 +258,11 @@ sealed protected trait EntityRoutes extends SprayRoutes {
                     bean.appendMap(Map(CommandBean.KeyEntity -> po))
                     mapHeaders(getResponseHeaders) {
                       authenticate(OAuth(tokenAuth _, "session")) { info =>
+                        bean.authInfo = Some(info)
                         innerExecute(Some(bean))
                       } ~
                       authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                        bean.authInfo = Some(info)
                         innerExecute(Some(bean))
                       }
                     }
