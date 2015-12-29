@@ -20,11 +20,13 @@
 package com.webtrends.harness.component.spray.routes
 
 import com.webtrends.harness.command._
+import com.webtrends.harness.component.spray.authentication.Token
 import com.webtrends.harness.component.spray.route._
 import spray.http.ContentTypes
 import spray.httpx.marshalling.Marshaller
 import spray.httpx.unmarshalling.Unmarshaller
 import spray.routing.Route
+import spray.routing.authentication.UserPass
 
 import scala.concurrent.Future
 
@@ -51,6 +53,18 @@ sealed abstract class TestCommand extends Command {
 
 class BaseTestCommand extends TestCommand with SprayGet with SprayHead with SprayOptions with SprayPatch {
   override def commandName: String = "BaseTest"
+}
+
+class AuthTestCommand extends TestCommand with SprayGet with SprayHead with SprayOptions with SprayPatch {
+  override def commandName: String = "AuthTest"
+
+  override def basicAuth(userPass: Option[UserPass]): Future[Option[(String, String)]] = Future {
+    if (userPass.exists(_.user == "good")) Some("", "") else Option[(String, String)](null)
+  }
+
+  override def tokenAuth(tokenScope: Option[Token]): Future[Option[(String, String)]] = Future {
+    if (tokenScope.exists(_.token.exists(_ == "good"))) Some("", "") else Option[(String, String)](null)
+  }
 }
 
 case class TestObject(stringKey:String, intKey:Int)

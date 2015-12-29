@@ -20,6 +20,7 @@
 package com.webtrends.harness.component.spray.directive
 
 import com.webtrends.harness.command.{Command, CommandBean}
+import com.webtrends.harness.component.spray.command.SprayCommandBean
 import spray.http.HttpHeader
 import spray.routing.{Directive0, Directive1}
 
@@ -38,10 +39,13 @@ trait CommandDirectives extends BaseDirectives {
    * @param path the path that the user is trying to match.
    * @return a commandbean containing any segments extracted from the url
    */
-  def commandPath(path:String) : Directive1[CommandBean] = {
+  def commandPath(path:String) : Directive1[SprayCommandBean] = {
     extract(_.request.uri.path.toString()) flatMap {
       pa => Command.matchPath(path, pa) match {
-        case Some(s) => provide(s)
+        case Some(s) =>
+          val retBean = new SprayCommandBean(None)
+          retBean.appendMap(s.toMap)
+          provide(retBean)
         case None => reject
       }
     }
@@ -55,11 +59,11 @@ trait CommandDirectives extends BaseDirectives {
    * @param paths The set of paths that a user wishes to match.
    * @return
    */
-  def commandPaths(paths:Map[String, String]) : Directive1[CommandBean] = {
+  def commandPaths(paths:Map[String, String]) : Directive1[SprayCommandBean] = {
     extract(_.request.uri.path.toString()) flatMap {
       pa =>
         var matchFound = false
-        val retBean = new CommandBean()
+        val retBean = new SprayCommandBean(None)
         paths.toStream.takeWhile(_ => !matchFound) foreach {
           path => Command.matchPath(path._2, pa) match {
             case Some(b) =>
