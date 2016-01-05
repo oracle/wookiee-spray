@@ -38,6 +38,8 @@ import spray.routing.directives.MethodDirectives
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
+class SprayCommandBean(var authInfo: Option[Map[String, Any]]) extends CommandBean
+
 /**
  * Used for command functions that are required for all Spray traits that you can add to commands
  * to add GET, POST, DELETE, UPDATE routes to the command
@@ -80,11 +82,11 @@ trait SprayRoutes extends CommandDirectives
   /**
     * Override to provide basic auth functionality before evaluating a command
     * @param userPass Holds both the user and password send on the header
-    * @return Some(String, String) if auth successful, None if failed, the strings can be anything
+    * @return Some(Map[String, AnyRef]) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
     */
-  def basicAuth(userPass: Option[UserPass]): Future[Option[(String, String)]] = Future {
-    userPass.map(it => Some(it.user, "")).getOrElse(Some("", ""))
+  def basicAuth(userPass: Option[UserPass]): Future[Option[Map[String, Any]]] = Future {
+    userPass.map(it => Some(Map("user" -> it.user))).getOrElse(Some(Map()))
   }
 
   /**
@@ -92,10 +94,10 @@ trait SprayRoutes extends CommandDirectives
     * is executed before basicAuth() and by default will fail authentication (causing us to pass
     * through to basicAuth()) so if only using basic auth there is no need to override this method
     * @param tokenScope Holds both the token and the scope in which it should be executed
-    * @return Some(String, String) if auth successful, None if failed, the strings can be anything
+    * @return Some(String, String) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
     */
-  def tokenAuth(tokenScope: Option[Token]): Future[Option[(String, String)]] = Future {
+  def tokenAuth(tokenScope: Option[Token]): Future[Option[Map[String, Any]]] = Future {
     None
   }
 

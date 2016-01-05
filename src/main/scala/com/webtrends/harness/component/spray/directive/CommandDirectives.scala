@@ -20,7 +20,7 @@
 package com.webtrends.harness.component.spray.directive
 
 import com.webtrends.harness.command.{Command, CommandBean}
-import com.webtrends.harness.component.spray.command.SprayCommandBean
+import com.webtrends.harness.component.spray.route.SprayCommandBean
 import spray.http.HttpHeader
 import spray.routing.{Directive0, Directive1}
 

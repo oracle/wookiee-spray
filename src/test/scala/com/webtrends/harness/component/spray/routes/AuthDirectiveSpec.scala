@@ -3,7 +3,7 @@ package com.webtrends.harness.component.spray.routes
 import akka.testkit.TestActorRef
 import com.webtrends.harness.component.spray.route.RouteManager
 import org.specs2.mutable.SpecificationWithJUnit
-import spray.http.HttpHeaders.{Authorization, Origin, RawHeader}
+import spray.http.HttpHeaders.Authorization
 import spray.http._
 import spray.routing.{Directives, HttpService}
 import spray.testkit.Specs2RouteTest
@@ -22,7 +22,7 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(BasicHttpCredentials("good", "whatever"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue must_=== 200
+        status.intValue mustEqual 200
       }
     }
 
@@ -33,13 +33,13 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(BasicHttpCredentials("bad", "whatever"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue must_=== 401
+        status.intValue mustEqual 401
       }
     }
 
     "should fail Get requests using no creds" in {
       Get("/foo/key1/bar/key2") ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue must_=== 401
+        status.intValue mustEqual 401
       }
     }
 
@@ -50,7 +50,7 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(OAuth2BearerToken("good"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue must_=== 200
+        status.intValue mustEqual 200
       }
     }
 
@@ -61,7 +61,7 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(OAuth2BearerToken("bad"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue must_=== 401
+        status.intValue mustEqual 401
       }
     }
   }
