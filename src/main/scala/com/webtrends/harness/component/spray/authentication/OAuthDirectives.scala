@@ -1,7 +1,7 @@
 package com.webtrends.harness.component.spray.authentication
 
 import spray.http.HttpHeaders.`WWW-Authenticate`
-import spray.http.{HttpChallenge, HttpCredentials, HttpRequest, OAuth2BearerToken}
+import spray.http._
 import spray.routing.authentication.HttpAuthenticator
 import spray.routing.{RequestContext, RoutingSettings}
 
@@ -28,7 +28,8 @@ class OAuthHttpAuthenticator[U](val scope: String, val oauthAuthenticator: OAuth
   }
 
   def getChallengeHeaders(httpRequest: HttpRequest) =
-    `WWW-Authenticate`(HttpChallenge(scheme = this.scheme, realm = scope, params = Map.empty)) :: Nil
+    // Returning Basic scheme here to make sure that we return a basic header to get the username/password dialog
+    `WWW-Authenticate`(HttpChallenge(scheme = "Basic", realm = scope, params = Map.empty)) :: Nil
 }
 
 object OAuth {
