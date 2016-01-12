@@ -28,6 +28,7 @@ class OAuthHttpAuthenticator[U](val scope: String, val oauthAuthenticator: OAuth
   }
 
   def getChallengeHeaders(httpRequest: HttpRequest) =
+    // Returning Basic scheme here to make sure that we return a basic header to get the username/password dialog
     `WWW-Authenticate`(HttpChallenge(scheme = "Basic", realm = scope, params = Map.empty)) :: Nil
 }
 
