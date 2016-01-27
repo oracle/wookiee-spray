@@ -30,43 +30,50 @@ case class HttpRunning()
 case class WebSocketRunning()
 
 class SprayManager(name:String) extends Component(name)
-    with SprayServer
+    with SprayHttpServer
     with SprayClient
     with SprayWebSocketServer {
 
-  implicit val spSettings = ServerSettings(config)
-  implicit val port = ConfigUtil.getDefaultValue(s"${name}.http-port", config.getInt, 8080)
-  implicit val websocketPort = ConfigUtil.getDefaultValue(s"${name}.websocket-port", config.getInt, 8081)
+  val spSettings = ServerSettings(config)
+  val internalHttpPort = ConfigUtil.getDefaultValue(s"$name.http-port", config.getInt, 8080)
+
+  val externalHttpPortPath: String = s"$name.http-external-port"
+  val externalHttpPort = config.hasPath(externalHttpPortPath) match {
+    case true => Some(config.getInt(externalHttpPortPath))
+    case false => None
+  }
+
+  val websocketPort = ConfigUtil.getDefaultValue(s"$name.websocket-port", config.getInt, 8081)
   var rCount = new AtomicInteger(0)
 
-  override protected def defaultChildName: Option[String] = Some(SprayServer.SprayServerName)
 
   override def receive = super.receive orElse {
     case HttpRunning =>
-      checkRunning
+      checkRunning()
     case WebSocketRunning =>
-      checkRunning
+      checkRunning()
     case HttpReloadRoutes =>
-      httpServer match {
-        case Some(s) => s ! HttpReloadRoutes
-        case None => // ignore
-      }
+      sendHttpServerMessage(HttpReloadRoutes)
     case SystemReady =>
-      httpServer match {
-        case Some(s) => s ! HttpStartProcessing
-        case None => // ignore
-      }
+      sendHttpServerMessage(HttpStartProcessing)
   }
 
-  private def checkRunning: Unit = {
+  private def expectedRunningCount = {
+    externalHttpPort match {
+      case None => 2
+      case Some(_) => 3
+    }
+  }
+
+  private def checkRunning() = {
     rCount.getAndIncrement()
-    if (rCount.get() == 2) {
+    if (rCount.get() == expectedRunningCount) {
       context.parent ! ComponentStarted(self.path.name)
     }
   }
 
   override def start = {
-    startSprayServer(port, Some(spSettings))
+    startSprayServer(internalHttpPort, externalHttpPort, Some(spSettings))
     startWebSocketServer(websocketPort, Some(spSettings))
     // start the HttpClient actor
     startSprayClient
@@ -74,7 +81,7 @@ class SprayManager(name:String) extends Component(name)
 
   override def stop = {
     super.stop
-    stopSprayServer
+    sendHttpServerMessage(ShutdownServer)
     stopWebSocketServer
   }
 }
