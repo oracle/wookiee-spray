@@ -42,9 +42,9 @@ trait CommandRouteHandler extends Directives {
     case me:MappingException =>
       externalLogger.debug(me.getMessage, me)
       complete(BadRequest, s"Mapping Exception - ${me.getMessage}\n\t${me.toString}")
-    case ex:Exception => ctx =>
+    case ex:Exception =>
       externalLogger.debug(ex.getMessage, ex)
-      failWith(ex)
+      complete(InternalServerError, "Internal Server Error")
   }))
 
   def rejectionHandler = handleRejections(RejectionHandler({

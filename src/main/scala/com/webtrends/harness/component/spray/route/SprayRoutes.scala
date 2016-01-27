@@ -185,10 +185,10 @@ trait SprayRoutes extends CommandDirectives
   }
 
   protected def buildRoute(httpMethod:Directive0) : Route = {
-    getRejectionHandler {
-      getExceptionHandler {
-        corsResponse {
-          corsRequest {
+    corsResponse {
+      corsRequest {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               httpMethod {
                 mapHeaders(getResponseHeaders) {
@@ -249,10 +249,10 @@ sealed protected trait EntityRoutes extends SprayRoutes {
   implicit def InputUnmarshaller[T : Manifest] = liftJsonUnmarshaller[T]
 
   protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0): Route = {
-    getRejectionHandler {
-      getExceptionHandler {
-        corsResponse {
-          corsRequest {
+    corsResponse {
+      corsRequest {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               commandPaths(paths) { bean =>
                 httpMethod {
@@ -340,9 +340,9 @@ trait SprayOptions extends SprayRoutes {
 
   def optionsRoute: Route = {
     respondJson {
-      getRejectionHandler {
-        getExceptionHandler {
-          corsPreflight {
+      corsPreflight {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               commandPaths(paths) { bean =>
                 options {
