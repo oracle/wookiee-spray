@@ -116,7 +116,7 @@ class SprayManagerSpec extends TestKitSpecificationWithJUnit(ActorSystem("testIn
   }
 
   "ExternalOnlyTestCommand" should {
-    "respond on the internal port" in {
+    "not respond on the internal port" in {
       val response: Future[HttpResponse] =
         (IO(Http) ? HttpRequest(GET, Uri("http://localhost:9090/test/ExternalOnlyTestCommand"))).mapTo[HttpResponse]
       Await.result(response, Duration("10 seconds")).status must beEqualTo(StatusCodes.NotFound)
