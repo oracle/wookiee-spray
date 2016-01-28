@@ -1,5 +1,7 @@
 package com.webtrends.harness.component.spray.directive
 
+import java.util.concurrent.TimeUnit
+
 import akka.testkit.TestActorRef
 import com.webtrends.harness.command.{Command, CommandBean}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
@@ -12,6 +14,7 @@ import spray.routing.{Directives, HttpService}
 import spray.testkit.Specs2RouteTest
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class CORSDefault extends Command with SprayGet with CORS {
   import context.dispatcher
@@ -80,6 +83,17 @@ class CORSCustomResponseHeaders extends Command with SprayGet with CORS {
   }
 }
 
+class CORSException extends Command with SprayGet with CORS {
+  import context.dispatcher
+  override def commandName: String = "CORSException"
+  override def path: String = "/test/CORSException"
+  val responseData = new JObject(List())
+
+  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+    throw new Exception("command failed")
+  }
+}
+
 class CORSSpec extends SpecificationWithJUnit
 with Directives
 with Specs2RouteTest
@@ -91,6 +105,7 @@ with HttpService {
   val rejectNoOriginCommand = TestActorRef[CORSRejectNoOrigin]
   val limitedAllowedOrigins = TestActorRef[CORSLimitedAllowedOrigins]
   val customResponseHeaders = TestActorRef[CORSCustomResponseHeaders]
+  val exception = TestActorRef[CORSException]
 
   "CORS pre-flight request default behavior" should {
 
@@ -221,6 +236,26 @@ with HttpService {
         None
       ) ~> RouteManager.getRoute("CORSLimitedAllowedOrigins_get").get ~> check {
         status mustEqual StatusCodes.Unauthorized
+      }
+    }
+  }
+
+  "CORS resource request with failure" should {
+
+    "Include default response headers when Origin request header is present and command threw an exception" in {
+
+      HttpRequest(
+        HttpMethods.GET,
+        "/test/CORSException",
+        List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
+        None
+      ) ~> RouteManager.getRoute("CORSException_get").get ~> check {
+        status mustEqual StatusCodes.InternalServerError
+        headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
+        headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
+        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
+        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
+        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
       }
     }
   }
