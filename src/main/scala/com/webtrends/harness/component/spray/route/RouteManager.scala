@@ -19,33 +19,51 @@
 
 package com.webtrends.harness.component.spray.route
 
+import java.util.concurrent.ConcurrentHashMap
+
 import com.typesafe.config.Config
 import com.webtrends.harness.authentication.CIDRRules
 import com.webtrends.harness.component.spray.directive.CIDRDirectives
+import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import spray.routing._
 
-import scala.collection.mutable.{HashMap, SynchronizedMap}
-
+import scala.collection.JavaConverters._
 /**
  * @author Michael Cuthbert on 11/14/14.
  */
 object RouteManager extends CIDRDirectives {
-  var cidrRules:Option[CIDRRules] = None
-  def apply(config:Config) = cidrRules = Some(CIDRRules(config))
+  var cidrRules: Option[CIDRRules] = None
 
-  private val routes = new HashMap[String, Route] with SynchronizedMap[String, Route]
+  def apply(config: Config) = cidrRules = Some(CIDRRules(config))
 
-  def addRoute(name: String, route: Route) = {
-    externalLogger.debug(s"new route registered with route manager [$name]")
-    routes += name -> route
+  //Now using Java ConcurrentHashMap due to previous use of deprecated Scala "with SynchronizedMap"
+  private val routes = new ConcurrentHashMap[RouteAccessibility, ConcurrentHashMap[String, Route]]()
+
+  def addRoute(name: String, route: Route, routeAccess: Set[RouteAccessibility] = Set(RouteAccessibility.INTERNAL)) = {
+    externalLogger.debug(s"new route registered with route manager [$name] and accessiblity of ${routeAccess.mkString(", ")}")
+
+    routeAccess.foreach { access: RouteAccessibility =>
+      routes.putIfAbsent(access, new ConcurrentHashMap())
+      routes.get(access).put(name, route)
+    }
   }
 
-  def removeRoute(name: String, route: Route) = {
-    externalLogger.debug(s"route unregistered with route manager [$name]")
-    routes.remove(name)
+  def getRoute(service: String, access: RouteAccessibility = RouteAccessibility.INTERNAL): Option[Route] = {
+    routes.containsKey(access) match {
+      case true =>
+        val m = routes.get(access)
+        m.containsKey(service) match {
+          case true => Some(m.get(service))
+          case false => None
+        }
+      case false => None
+    }
   }
 
-  def getRoute(service: String): Option[Route] = routes.get(service)
-
-  def getRoutes: Iterable[Route] = routes.values
+  def getRoutes(access: RouteAccessibility = RouteAccessibility.INTERNAL): Iterable[Route] = {
+    routes.containsKey(access) match {
+      case true => routes.get(access).values.iterator().asScala.toIterable
+      case false => Iterable[Route]()
+    }
+  }
 }

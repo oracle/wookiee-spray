@@ -30,8 +30,11 @@ object SprayTestConfig {
       wookiee-spray {
         manager = "com.webtrends.harness.component.spray.SprayManager"
 
-        # The port on which to run the http server
+        # The port for the http server to be used for internal endpoints
         http-port = 9090
+
+        # The port for the http-server to be used for external endpoints
+        http-external-port = 9092
 
         # The port on which to run the websocket server
         websocket-port = 9091

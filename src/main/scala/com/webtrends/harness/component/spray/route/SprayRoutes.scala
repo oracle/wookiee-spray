@@ -24,6 +24,7 @@ import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean,
 import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives}
+import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import net.liftweb.json._
 import net.liftweb.json.ext.JodaTimeSerializers
@@ -56,6 +57,8 @@ trait SprayRoutes extends CommandDirectives
   protected def getRejectionHandler : Directive0 = rejectionHandler
   protected def getExceptionHandler : Directive0 = exceptionHandler
   protected val sprayManager = context.actorSelection(HarnessConstants.ComponentFullName + "/" + SprayManager.ComponentName)
+
+  def routeAccess: Set[RouteAccessibility] = Set(RouteAccessibility.INTERNAL)
 
   // components can have categories that they fall into, if a component has a category only a single component
   // of that category can be available. Then a user can message that category, so it would then be possible
@@ -185,10 +188,10 @@ trait SprayRoutes extends CommandDirectives
   }
 
   protected def buildRoute(httpMethod:Directive0) : Route = {
-    getRejectionHandler {
-      getExceptionHandler {
-        corsResponse {
-          corsRequest {
+    corsResponse {
+      corsRequest {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               httpMethod {
                 mapHeaders(getResponseHeaders) {
@@ -212,7 +215,7 @@ trait SprayRoutes extends CommandDirectives
   }
 
   protected def addRoute(name:String, route:Route) = {
-    RouteManager.addRoute(name, route)
+    RouteManager.addRoute(name, route, routeAccess)
     sprayManager ! HttpReloadRoutes
   }
 }
@@ -249,10 +252,10 @@ sealed protected trait EntityRoutes extends SprayRoutes {
   implicit def InputUnmarshaller[T : Manifest] = liftJsonUnmarshaller[T]
 
   protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0): Route = {
-    getRejectionHandler {
-      getExceptionHandler {
-        corsResponse {
-          corsRequest {
+    corsResponse {
+      corsRequest {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               commandPaths(paths) { bean =>
                 httpMethod {
@@ -340,9 +343,9 @@ trait SprayOptions extends SprayRoutes {
 
   def optionsRoute: Route = {
     respondJson {
-      getRejectionHandler {
-        getExceptionHandler {
-          corsPreflight {
+      corsPreflight {
+        getRejectionHandler {
+          getExceptionHandler {
             preRoute {
               commandPaths(paths) { bean =>
                 options {
