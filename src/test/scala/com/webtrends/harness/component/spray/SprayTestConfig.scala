@@ -31,10 +31,10 @@ object SprayTestConfig {
         manager = "com.webtrends.harness.component.spray.SprayManager"
 
         # The port for the http server to be used for internal endpoints
-        http-port = 8080
+        http-port = 9090
 
         # The port for the http-server to be used for external endpoints
-        http-external-port = 8082
+        http-external-port = 9092
 
         # The port on which to run the websocket server
         websocket-port = 9091

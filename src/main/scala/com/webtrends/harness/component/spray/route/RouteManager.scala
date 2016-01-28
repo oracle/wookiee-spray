@@ -24,12 +24,9 @@ import java.util.concurrent.ConcurrentHashMap
 import com.typesafe.config.Config
 import com.webtrends.harness.authentication.CIDRRules
 import com.webtrends.harness.component.spray.directive.CIDRDirectives
-import com.webtrends.harness.component.spray.route.RouteAccessibility
 import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import spray.routing._
 
-import scala.collection.mutable
-import scala.collection.mutable.{HashMap, SynchronizedMap}
 import scala.collection.JavaConverters._
 /**
  * @author Michael Cuthbert on 11/14/14.

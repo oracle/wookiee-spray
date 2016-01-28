@@ -54,8 +54,6 @@ class SprayManager(name:String) extends Component(name)
       checkRunning()
     case HttpReloadRoutes =>
       sendHttpServerMessage(HttpReloadRoutes)
-    case SystemReady =>
-      sendHttpServerMessage(HttpStartProcessing)
   }
 
   private def expectedRunningCount = {
@@ -68,6 +66,7 @@ class SprayManager(name:String) extends Component(name)
   private def checkRunning() = {
     rCount.getAndIncrement()
     if (rCount.get() == expectedRunningCount) {
+      sendHttpServerMessage(HttpStartProcessing)
       context.parent ! ComponentStarted(self.path.name)
     }
   }
