@@ -59,7 +59,7 @@ class AuthTestCommand extends TestCommand with SprayGet with SprayHead with Spra
   override def commandName: String = "AuthTest"
 
   override def basicAuth(userPass: Option[UserPass]): Future[Option[Map[String, Any]]] = Future {
-    if (userPass.exists(_.user == "good")) Some(Map()) else Option[Map[String, Any]](null)
+    if (userPass.exists(_.user == "good")) Some(Map()) else None
   }
 
   override def tokenAuth(tokenScope: Option[Token]): Future[Option[Map[String, Any]]] = Future {

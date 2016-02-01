@@ -22,6 +22,7 @@ package com.webtrends.harness.component.spray.route
 import com.webtrends.harness.command.CommandException
 import org.slf4j.LoggerFactory
 import spray.http.StatusCodes._
+import spray.routing.AuthenticationFailedRejection.{CredentialsRejected, CredentialsMissing}
 import spray.routing.{AuthenticationFailedRejection, RejectionHandler, Directives, ExceptionHandler}
 import net.liftweb.json.MappingException
 
@@ -51,7 +52,10 @@ trait CommandRouteHandler extends Directives {
     case AuthenticationFailedRejection(cause, authenticator) :: _ =>
       externalLogger.warn(s"Auth failed: cause $cause, $authenticator")
       respondWithHeaders(authenticator) {
-        complete(Unauthorized, "service is unauthorized")
+        cause match {
+          case CredentialsMissing => complete(Unauthorized, "service is unauthorized")
+          case CredentialsRejected => complete(Forbidden, "forbidden")
+        }
       }
   }))
 }
