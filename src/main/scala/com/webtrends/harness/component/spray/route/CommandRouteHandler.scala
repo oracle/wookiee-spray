@@ -50,11 +50,11 @@ trait CommandRouteHandler extends Directives {
 
   def rejectionHandler = handleRejections(RejectionHandler({
     case AuthenticationFailedRejection(cause, authenticator) :: _ =>
-      externalLogger.warn(s"Auth failed: cause $cause, $authenticator")
+      externalLogger.debug(s"Auth failed: cause $cause, $authenticator")
       respondWithHeaders(authenticator) {
         cause match {
-          case CredentialsMissing => complete(Unauthorized, "service is unauthorized")
-          case CredentialsRejected => complete(Forbidden, "forbidden")
+          case CredentialsMissing => complete(Unauthorized, "Unauthorized")
+          case CredentialsRejected => complete(Unauthorized, "Invalid username/password")
         }
       }
   }))

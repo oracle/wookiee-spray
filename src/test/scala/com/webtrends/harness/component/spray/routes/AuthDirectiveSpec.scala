@@ -34,7 +34,7 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(BasicHttpCredentials("bad", "whatever"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue mustEqual 403
+        status.intValue mustEqual 401
         header("WWW-Authenticate").get.value mustEqual "Basic realm=session"
       }
     }
@@ -65,7 +65,7 @@ class AuthDirectiveSpec extends SpecificationWithJUnit with Directives with Spec
         List(Authorization(OAuth2BearerToken("bad"))),
         None
       ) ~> RouteManager.getRoute("AuthTest_get").get ~> check {
-        status.intValue mustEqual 403
+        status.intValue mustEqual 401
         header("WWW-Authenticate").get.value mustEqual "Basic realm=session"
       }
     }
