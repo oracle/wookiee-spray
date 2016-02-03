@@ -23,7 +23,7 @@ import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
 import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
-import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives}
+import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives, HttpCompression}
 import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import net.liftweb.json._
@@ -35,6 +35,7 @@ import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.routing.authentication.{BasicAuth, UserPass}
 import spray.routing.directives.MethodDirectives
+
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -110,6 +111,14 @@ trait SprayRoutes extends CommandDirectives
    */
   def preRoute : Directive0 = {
     pass
+  }
+
+  /**
+    * Default behavior will decompress requests, Override if you want to change behavior
+    * See [[HttpCompression.compression]] for more details
+    */
+  def compression: Directive0 = {
+    decompressRequest()
   }
 
   /**
@@ -192,17 +201,19 @@ trait SprayRoutes extends CommandDirectives
       corsRequest {
         getRejectionHandler {
           getExceptionHandler {
-            preRoute {
-              httpMethod {
-                mapHeaders(getResponseHeaders) {
-                  commandPaths(paths) { bean =>
-                    authenticate(OAuth(tokenAuth _, "session")) { info =>
-                      bean.authInfo = Some(info)
-                      innerExecute(Some(bean))
-                    } ~
-                    authenticate(BasicAuth(basicAuth _, "session")) { info =>
-                      bean.authInfo = Some(info)
-                      innerExecute(Some(bean))
+            compression {
+              preRoute {
+                httpMethod {
+                  mapHeaders(getResponseHeaders) {
+                    commandPaths(paths) { bean =>
+                      authenticate(OAuth(tokenAuth _, "session")) { info =>
+                        bean.authInfo = Some(info)
+                        innerExecute(Some(bean))
+                      } ~
+                        authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                          bean.authInfo = Some(info)
+                          innerExecute(Some(bean))
+                        }
                     }
                   }
                 }
@@ -240,35 +251,40 @@ trait SprayGet extends SprayRoutes {
   addRoute(commandName + "_get", buildRoute(MethodDirectives.get))
 }
 
+
 /**
  * Based trait for any routes that grab the entity from the body of the request.
  * Currently Put and Post, due to the implicit manifest that is required for marshalling
  * any traits that use this base trait cannot be mixed in together.
  */
 sealed protected trait EntityRoutes extends SprayRoutes {
-  this : Command =>
-  import context.dispatcher
-  // default the unmarshaller to lift json unmarshaller
-  implicit def InputUnmarshaller[T : Manifest] = liftJsonUnmarshaller[T]
+  this: Command =>
 
-  protected def entityRoute[T<:AnyRef:Manifest](httpMethod:Directive0): Route = {
+  import context.dispatcher
+
+  // default the unmarshaller to lift json unmarshaller
+  implicit def InputUnmarshaller[T: Manifest] = liftJsonUnmarshaller[T]
+
+  protected def entityRoute[T <: AnyRef : Manifest](httpMethod: Directive0): Route = {
     corsResponse {
       corsRequest {
         getRejectionHandler {
           getExceptionHandler {
-            preRoute {
-              commandPaths(paths) { bean =>
-                httpMethod {
-                  entity(as[T]) { po =>
-                    bean.appendMap(Map(CommandBean.KeyEntity -> po))
-                    mapHeaders(getResponseHeaders) {
-                      authenticate(OAuth(tokenAuth _, "session")) { info =>
-                        bean.authInfo = Some(info)
-                        innerExecute(Some(bean))
-                      } ~
-                      authenticate(BasicAuth(basicAuth _, "session")) { info =>
-                        bean.authInfo = Some(info)
-                        innerExecute(Some(bean))
+            compression {
+              preRoute {
+                commandPaths(paths) { bean =>
+                  httpMethod {
+                    entity(as[T]) { po =>
+                      bean.appendMap(Map(CommandBean.KeyEntity -> po))
+                      mapHeaders(getResponseHeaders) {
+                        authenticate(OAuth(tokenAuth _, "session")) { info =>
+                          bean.authInfo = Some(info)
+                          innerExecute(Some(bean))
+                        } ~
+                          authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                            bean.authInfo = Some(info)
+                            innerExecute(Some(bean))
+                          }
                       }
                     }
                   }
