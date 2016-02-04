@@ -46,7 +46,7 @@ class PingCommand extends Command
   override def path: String = "/test/$key/ping"
 
   override def customRoute: Route = {
-    internalExceptionHandler {
+    exceptionHandler {
       get {
         path("custom" / "ping") {
           innerExecute()

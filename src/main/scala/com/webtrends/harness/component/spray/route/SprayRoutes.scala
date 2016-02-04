@@ -97,7 +97,6 @@ trait SprayRoutes extends CommandDirectives
 
   /**
     * Override to provide basic auth functionality before evaluating a command
-    *
     * @param userPass Holds both the user and password send on the header
     * @return Some(Map[String, AnyRef]) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
@@ -110,7 +109,6 @@ trait SprayRoutes extends CommandDirectives
     * Override to provide bearer token auth functionality before evaluating a command, this method
     * is executed before basicAuth() and by default will fail authentication (causing us to pass
     * through to basicAuth()) so if only using basic auth there is no need to override this method
-    *
     * @param tokenScope Holds both the token and the scope in which it should be executed
     * @return Some(String, String) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
