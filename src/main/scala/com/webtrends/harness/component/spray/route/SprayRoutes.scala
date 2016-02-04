@@ -26,6 +26,7 @@ import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives, HttpCompression}
 import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
+import com.webtrends.harness.utils.ConfigUtil
 import net.liftweb.json._
 import net.liftweb.json.ext.JodaTimeSerializers
 import spray.http._
@@ -55,10 +56,21 @@ trait SprayRoutes extends CommandDirectives
 
   import context.dispatcher
   implicit def liftJsonFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
+
+  val sprayConfig = ConfigUtil.prepareSubConfig(context.system.settings.config, "wookiee-spray")
+
   protected def getRejectionHandler : Directive0 = rejectionHandler
-  protected def getExceptionHandler : Directive0 = exceptionHandler
+
+  protected def getExceptionHandler : Directive0 = ConfigUtil.getDefaultValue("debug-exception-handler", sprayConfig.getBoolean, false) match {
+    case true => debugExceptionHandler
+    case false => exceptionHandler
+  }
+
   protected val sprayManager = context.actorSelection(HarnessConstants.ComponentFullName + "/" + SprayManager.ComponentName)
 
+  // There will potentially be two HTTP servers - One for internal use, and one that can be exposed externally.
+  // By default, all routes are available on the internal port. To also expose on the external port, override this set
+  // and include [[RouteAccessibility.EXTERNAL]] or use the [[RouteAccessibility.ExternalAndInternal]] trait
   def routeAccess: Set[RouteAccessibility] = Set(RouteAccessibility.INTERNAL)
 
   // components can have categories that they fall into, if a component has a category only a single component
