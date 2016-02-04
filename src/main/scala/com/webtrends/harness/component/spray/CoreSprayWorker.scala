@@ -49,7 +49,6 @@ class CoreSprayWorker extends HttpServiceActor
   val spSettings = ServerSettings(context.system)
   var cidrRules: Option[CIDRRules] = Some(CIDRRules(context.system.settings.config))
 
-
   def baseRoutes: Route = {
     unmatchedPath { remainingPath =>
       complete(StatusCodes.NotFound)
@@ -86,20 +85,17 @@ class CoreSprayWorker extends HttpServiceActor
 
   def myLog(request: HttpRequest): Any => Option[LogEntry] = {
     case x: HttpResponse => {
-      println(s"Normal: $request")
-      createLogEntry(request, x.status + " " + x.toString())
+      createLogEntry(request, s"${x.status}")
     }
     case Rejected(rejections) => {
-      println(s"Rejection: $request")
-      createLogEntry(request, " Rejection " + rejections.toString())
+      createLogEntry(request, s"Rejection ${rejections.toString()}")
     }
     case x => {
-      println(s"other: $request")
       createLogEntry(request, x.toString())
     }
   }
 
   def createLogEntry(request: HttpRequest, text: String): Some[LogEntry] = {
-    Some(LogEntry("#### Request " + request + " => " + text, Logging.DebugLevel))
+    Some(LogEntry(s"#### ${request.method} ${request.uri}  => $text", Logging.DebugLevel))
   }
 }
