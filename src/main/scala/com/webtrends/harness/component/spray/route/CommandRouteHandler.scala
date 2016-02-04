@@ -33,7 +33,7 @@ trait CommandRouteHandler extends Directives {
 
   private val externalLogger = LoggerFactory.getLogger(this.getClass)
 
-  def exceptionHandler = handleExceptions(ExceptionHandler({
+  def debugExceptionHandler = handleExceptions(ExceptionHandler({
     case ce:CommandException =>
       externalLogger.debug(ce.getMessage, ce)
       complete(BadRequest, s"Command Exception - ${ce.getMessage}\n\t${ce.toString}")
@@ -43,6 +43,12 @@ trait CommandRouteHandler extends Directives {
     case me:MappingException =>
       externalLogger.debug(me.getMessage, me)
       complete(BadRequest, s"Mapping Exception - ${me.getMessage}\n\t${me.toString}")
+    case ex:Exception =>
+      externalLogger.debug(ex.getMessage, ex)
+      complete(InternalServerError, s"Internal Server Error - ${ex.getMessage}\n\t${ex.toString}")
+  }))
+
+  def exceptionHandler = handleExceptions(ExceptionHandler({
     case ex:Exception =>
       externalLogger.debug(ex.getMessage, ex)
       complete(InternalServerError, "Internal Server Error")
