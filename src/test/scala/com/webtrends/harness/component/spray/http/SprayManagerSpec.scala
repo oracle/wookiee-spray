@@ -12,7 +12,7 @@ import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route.{ExternalOnly, ExternalAndInternal, RouteManager, SprayGet}
 import com.webtrends.harness.component.spray.{SprayManager, SprayTestConfig, TestKitSpecificationWithJUnit}
 import com.webtrends.harness.service.test.TestHarness
-import net.liftweb.json.JObject
+import org.json4s.JObject
 import spray.can.Http
 import spray.http.HttpMethods._
 import spray.http._

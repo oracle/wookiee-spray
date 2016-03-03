@@ -20,11 +20,11 @@
 package com.webtrends.harness.component.spray.route
 
 import com.webtrends.harness.command.CommandException
+import org.json4s.MappingException
 import org.slf4j.LoggerFactory
 import spray.http.StatusCodes._
 import spray.routing.AuthenticationFailedRejection.{CredentialsRejected, CredentialsMissing}
 import spray.routing.{AuthenticationFailedRejection, RejectionHandler, Directives, ExceptionHandler}
-import net.liftweb.json.MappingException
 
 /**
  * @author Michael Cuthbert on 12/11/14.

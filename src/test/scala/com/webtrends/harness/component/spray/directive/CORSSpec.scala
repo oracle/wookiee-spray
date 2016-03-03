@@ -6,7 +6,7 @@ import akka.testkit.TestActorRef
 import com.webtrends.harness.command.{Command, CommandBean}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route.{RouteManager, SprayGet}
-import net.liftweb.json.JObject
+import org.json4s.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http.HttpHeaders.{Origin, RawHeader, `Access-Control-Request-Headers`}
 import spray.http._
@@ -14,7 +14,6 @@ import spray.routing.{Directives, HttpService}
 import spray.testkit.Specs2RouteTest
 
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 
 class CORSDefault extends Command with SprayGet with CORS {
   import context.dispatcher
@@ -84,7 +83,6 @@ class CORSCustomResponseHeaders extends Command with SprayGet with CORS {
 }
 
 class CORSException extends Command with SprayGet with CORS {
-  import context.dispatcher
   override def commandName: String = "CORSException"
   override def path: String = "/test/CORSException"
   val responseData = new JObject(List())

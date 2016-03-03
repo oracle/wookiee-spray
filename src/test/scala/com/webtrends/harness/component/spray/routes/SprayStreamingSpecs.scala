@@ -4,11 +4,10 @@ import java.io.{ByteArrayInputStream, InputStream}
 import java.util.concurrent.TimeUnit
 
 import akka.actor.Props
-import akka.testkit.TestActorRef
 import com.webtrends.harness.command.CommandBean
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route.{SprayStreamResponse, RouteManager}
-import net.liftweb.json.JsonAST.JObject
+import org.json4s.JsonAST.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http.{HttpHeaders, StatusCodes}
 import spray.routing.{HttpService, Directives}

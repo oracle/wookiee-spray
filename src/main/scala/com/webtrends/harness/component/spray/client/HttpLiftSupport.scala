@@ -18,7 +18,9 @@
  */
 package com.webtrends.harness.component.spray.client
 
-import net.liftweb.json._
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.Serialization
 import spray.httpx.unmarshalling.Unmarshaller
 import spray.http._
 import spray.httpx.marshalling.Marshaller

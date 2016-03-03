@@ -141,7 +141,8 @@ class ServerWorker extends WebSocketWorker {
     case x: Tcp.ConnectionClosed =>
       log.info("Server Close")
   }: Receive) orElse super.businessLogic
-}```
+}
+```
 
 ### Adding a WebSocket endpoint to the websocket server
 Endpoints can be added to the WebSocket server by implementing the addWebSocketWorkers function in your service and mapping paths to workers.  An actor will be created for each connection made to the endpoint.  

@@ -15,7 +15,7 @@ import com.webtrends.harness.service.ServiceManager
 import com.webtrends.harness.service.ServiceManager.GetMetaDataByName
 import com.webtrends.harness.service.messages.GetMetaData
 import com.webtrends.harness.service.meta.ServiceMetaData
-import net.liftweb.json._
+import org.json4s._
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.util.{Failure, Success}
