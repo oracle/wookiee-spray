@@ -19,8 +19,9 @@
 
 package com.webtrends.harness.component.spray.serialization
 
-import net.liftweb.json._
-import net.liftweb.json.JsonDSL._
+import org.json4s._
+import org.json4s.JsonAST.JString
+import org.json4s.jackson.Serialization
 
 /**
  * @author Michael Cuthbert on 1/13/15.
@@ -36,6 +37,6 @@ class EnumerationSerializer(enums: Enumeration*) extends Serializer[Enumeration#
   }
 
   def serialize(implicit format: Formats): PartialFunction[Any, JValue] = {
-    case i: Enumeration#Value => i.toString
+    case i: Enumeration#Value => JString(i.toString)
   }
 }

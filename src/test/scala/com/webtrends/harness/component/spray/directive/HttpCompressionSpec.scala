@@ -5,14 +5,15 @@ import akka.testkit.TestActorRef
 import com.webtrends.harness.command.{CommandBean, Command}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route.{RouteManager, SprayPost, SprayGet}
-import net.liftweb.json.JsonAST.JObject
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
+import org.json4s.JsonAST.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http.HttpHeaders._
 import spray.http._
 import spray.routing.{HttpService, Directives}
 import spray.testkit.Specs2RouteTest
 import java.util.zip.{GZIPOutputStream, GZIPInputStream}
-import net.liftweb.json._
 
 import scala.concurrent.Future
 import scala.io.Source
@@ -88,7 +89,7 @@ with HttpService {
 
     "decompress requests" in {
 
-      val byteOut = new ByteArrayOutputStream(DecompressRequestCommand.requestContent.size)
+      val byteOut = new ByteArrayOutputStream(DecompressRequestCommand.requestContent.length)
       val zipOutputStream = new GZIPOutputStream(byteOut)
       zipOutputStream.write(DecompressRequestCommand.requestContent.getBytes())
       zipOutputStream.close()

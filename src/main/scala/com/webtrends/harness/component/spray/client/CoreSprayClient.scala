@@ -32,9 +32,9 @@ import spray.httpx.encoding.Gzip
 import spray.http.HttpMethods._
 import akka.pattern._
 import scala.util.control.NonFatal
-import net.liftweb.json._
-import net.liftweb.json.Extraction.decompose
 import akka.io.IO
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 import spray.can.Http
 import spray.httpx.marshalling.Marshaller
 import scala.util.Failure
@@ -89,7 +89,7 @@ class CoreSprayClient extends HActor with HttpLiftSupport {
   def service[T:Manifest](config:HttpConfig, method:HttpMethod, path:String, body:Option[T], headers:List[HttpHeader]) = {
     implicit val HttpJsonMarshaller =
       Marshaller.of[T](ContentTypes.`application/json`) { (value, contentType, ctx) =>
-        ctx.marshalTo(HttpEntity(contentType, compactRender(decompose(value))))
+        ctx.marshalTo(HttpEntity(contentType, compact(render(Extraction.decompose(value)))))
       }
     try {
       val fullPath = config.fullPath(path)

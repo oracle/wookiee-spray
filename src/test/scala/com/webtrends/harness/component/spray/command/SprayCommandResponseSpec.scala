@@ -4,7 +4,7 @@ import akka.testkit.TestActorRef
 import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, CommandBean}
 import com.webtrends.harness.component.spray.route.RouteManager
 import com.webtrends.harness.component.spray.routes.BaseTestCommand
-import net.liftweb.json.JObject
+import org.json4s.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http._
 import spray.routing.{HttpService, Directives}

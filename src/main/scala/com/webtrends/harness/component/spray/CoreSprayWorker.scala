@@ -20,7 +20,7 @@ package com.webtrends.harness.component.spray
 
 import _root_.spray.can.server.ServerSettings
 import _root_.spray.http.{HttpRequest, HttpResponse, StatusCodes}
-import _root_.spray.httpx.LiftJsonSupport
+import _root_.spray.httpx.Json4sSupport
 import _root_.spray.routing.directives.LogEntry
 import _root_.spray.routing.{HttpServiceActor, Rejected, Route}
 import akka.event.Logging
@@ -31,7 +31,7 @@ import com.webtrends.harness.component.spray.route.{RouteAccessibility, RouteMan
 import com.webtrends.harness.component.spray.serialization.EnumerationSerializer
 import com.webtrends.harness.health.{ComponentState, _}
 import com.webtrends.harness.logging.ActorLoggingAdapter
-import net.liftweb.json.ext.JodaTimeSerializers
+import org.json4s.ext.JodaTimeSerializers
 
 @SerialVersionUID(1L) case class HttpStartProcessing()
 @SerialVersionUID(1L) case class HttpReloadRoutes()
@@ -41,10 +41,10 @@ class CoreSprayWorker extends HttpServiceActor
     with ActorHealth
     with ActorLoggingAdapter
     with CIDRDirectives
-    with LiftJsonSupport
+    with Json4sSupport
     with ComponentHelper {
 
-  implicit val liftJsonFormats = net.liftweb.json.DefaultFormats + new EnumerationSerializer(ComponentState) ++ JodaTimeSerializers.all
+  implicit val json4sFormats = org.json4s.DefaultFormats + new EnumerationSerializer(ComponentState) ++ JodaTimeSerializers.all
 
   val spSettings = ServerSettings(context.system)
   var cidrRules: Option[CIDRRules] = Some(CIDRRules(context.system.settings.config))
@@ -84,15 +84,12 @@ class CoreSprayWorker extends HttpServiceActor
   }
 
   def myLog(request: HttpRequest): Any => Option[LogEntry] = {
-    case x: HttpResponse => {
+    case x: HttpResponse =>
       createLogEntry(request, s"${x.status}")
-    }
-    case Rejected(rejections) => {
+    case Rejected(rejections) =>
       createLogEntry(request, s"Rejection ${rejections.toString()}")
-    }
-    case x => {
+    case x =>
       createLogEntry(request, x.toString())
-    }
   }
 
   def createLogEntry(request: HttpRequest, text: String): Some[LogEntry] = {

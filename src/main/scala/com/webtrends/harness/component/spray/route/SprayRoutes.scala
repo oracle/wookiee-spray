@@ -27,10 +27,13 @@ import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives,
 import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import com.webtrends.harness.utils.ConfigUtil
-import net.liftweb.json._
-import net.liftweb.json.ext.JodaTimeSerializers
+import org.json4s._
+import org.json4s.{JObject, JValue}
+import org.json4s.ext.JodaTimeSerializers
+import org.json4s.jackson.JsonMethods._
+import org.json4s.jackson.Serialization
 import spray.http._
-import spray.httpx.LiftJsonSupport
+import spray.httpx.Json4sSupport
 import spray.httpx.marshalling.ToResponseMarshaller
 import spray.httpx.unmarshalling._
 import spray.routing._
@@ -51,11 +54,11 @@ class SprayCommandBean(var authInfo: Option[Map[String, Any]]) extends CommandBe
  */
 trait SprayRoutes extends CommandDirectives
     with CommandRouteHandler
-    with LiftJsonSupport {
+    with Json4sSupport {
   this : Command =>
 
   import context.dispatcher
-  implicit def liftJsonFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
+  override implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
 
   val sprayConfig = ConfigUtil.prepareSubConfig(context.system.settings.config, "wookiee-spray")
 
@@ -78,7 +81,7 @@ trait SprayRoutes extends CommandDirectives
   // to not know at all what the underlying component you are using, as long has they handle the same messages.
 
   // default the marshaller to the lift json marshaller
-  implicit def OutputMarshaller[T <: AnyRef] = liftJsonMarshaller[T]
+  implicit def OutputMarshaller[T <: AnyRef] = json4sMarshaller[T]
 
   //override this value if you require a different response code
   def responseStatusCode: StatusCode = StatusCodes.OK
@@ -275,7 +278,7 @@ sealed protected trait EntityRoutes extends SprayRoutes {
   import context.dispatcher
 
   // default the unmarshaller to lift json unmarshaller
-  implicit def InputUnmarshaller[T: Manifest] = liftJsonUnmarshaller[T]
+  implicit def InputUnmarshaller[T: Manifest] = json4sUnmarshaller[T]
 
   protected def entityRoute[T <: AnyRef : Manifest](httpMethod: Directive0): Route = {
     corsResponse {
@@ -336,7 +339,7 @@ trait SprayOptions extends SprayRoutes {
   import context.dispatcher
   addRoute(commandName + "_options", optionsRoute)
 
-  implicit def optionsMarshaller = liftJsonMarshaller[JValue]
+  implicit def optionsMarshaller = json4sMarshaller[JValue]
 
   /**
    * Function will return all the allowed headers for the command. Basically if you mixin a trait like
