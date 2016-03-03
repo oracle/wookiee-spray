@@ -58,7 +58,7 @@ trait SprayRoutes extends CommandDirectives
   this : Command =>
 
   import context.dispatcher
-  override implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
+  implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
 
   val sprayConfig = ConfigUtil.prepareSubConfig(context.system.settings.config, "wookiee-spray")
 
