@@ -100,10 +100,11 @@ class MarshallTestCommand extends EntityBase with SprayPut {
         val Array(sKey, iKey) = obj.split(":")
         TestObject(sKey, Integer.parseInt(iKey)).asInstanceOf[T]
     }
+
   // Below is a custom marshaller if you want to use it differently
   // The Create command will use a custom marshaller and mimetype
   // and the Update command will use the default marshaller
-  override implicit def OutputMarshaller[T<:AnyRef] =
+  implicit def OutputMarshaller[T<:AnyRef] =
     Marshaller.delegate[T, String](ContentTypes.`text/plain`) {
       obj =>
         val tObj = obj.asInstanceOf[TestObject]

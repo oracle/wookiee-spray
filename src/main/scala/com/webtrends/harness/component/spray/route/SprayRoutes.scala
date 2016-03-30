@@ -19,6 +19,8 @@
 
 package com.webtrends.harness.component.spray.route
 
+import java.lang.reflect.InvocationTargetException
+
 import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.{BaseCommandResponse, Command, CommandBean, CommandResponse}
 import com.webtrends.harness.component.spray.authentication.{OAuth, Token}
@@ -27,19 +29,17 @@ import com.webtrends.harness.component.spray.directive.{CORS, CommandDirectives,
 import com.webtrends.harness.component.spray.route.RouteAccessibility.RouteAccessibility
 import com.webtrends.harness.component.spray.{HttpReloadRoutes, SprayManager}
 import com.webtrends.harness.utils.ConfigUtil
-import org.json4s._
-import org.json4s.{JObject, JValue}
 import org.json4s.ext.JodaTimeSerializers
 import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization
+import org.json4s.native.Serialization
+import org.json4s.{JObject, JValue, _}
+import spray.http.MediaTypes._
 import spray.http._
-import spray.httpx.Json4sSupport
-import spray.httpx.marshalling.ToResponseMarshaller
+import spray.httpx.marshalling.{BasicMarshallers, BasicToResponseMarshallers, Marshaller, ToResponseMarshaller}
 import spray.httpx.unmarshalling._
 import spray.routing._
 import spray.routing.authentication.{BasicAuth, UserPass}
 import spray.routing.directives.MethodDirectives
-
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -50,13 +50,13 @@ class SprayCommandBean(var authInfo: Option[Map[String, Any]]) extends CommandBe
  * Used for command functions that are required for all Spray traits that you can add to commands
  * to add GET, POST, DELETE, UPDATE routes to the command
  *
- * @author Michael Cuthbert on 12/5/14.
+ * @author Michael Cuthbert, Spencer Wood
  */
 trait SprayRoutes extends CommandDirectives
-    with CommandRouteHandler
-    with Json4sSupport {
+    with CommandRouteHandler with BasicToResponseMarshallers {
   this : Command =>
-
+  import BasicMarshallers._
+  def serialization = Serialization
   import context.dispatcher
   implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
 
@@ -81,7 +81,16 @@ trait SprayRoutes extends CommandDirectives
   // to not know at all what the underlying component you are using, as long has they handle the same messages.
 
   // default the marshaller to the lift json marshaller
-  implicit def OutputMarshaller[T <: AnyRef] = json4sMarshaller[T]
+  implicit def json4sUnmarshaller[T: Manifest] = {
+    implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
+    Unmarshaller[T](MediaTypes.`application/json`) {
+      case x: HttpEntity.NonEmpty ⇒
+        try serialization.read[T](x.asString(defaultCharset = HttpCharsets.`UTF-8`))
+        catch {
+          case MappingException("unknown error", ite: InvocationTargetException) ⇒ throw ite.getCause
+        }
+    }
+  }
 
   //override this value if you require a different response code
   def responseStatusCode: StatusCode = StatusCodes.OK
@@ -100,6 +109,7 @@ trait SprayRoutes extends CommandDirectives
 
   /**
     * Override to provide basic auth functionality before evaluating a command
+    *
     * @param userPass Holds both the user and password send on the header
     * @return Some(Map[String, AnyRef]) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
@@ -112,6 +122,7 @@ trait SprayRoutes extends CommandDirectives
     * Override to provide bearer token auth functionality before evaluating a command, this method
     * is executed before basicAuth() and by default will fail authentication (causing us to pass
     * through to basicAuth()) so if only using basic auth there is no need to override this method
+    *
     * @param tokenScope Holds both the token and the scope in which it should be executed
     * @return Some(String, String) if auth successful, None if failed, the map can be anything
     *         that is desired to be passed down on the SprayCommandBean
@@ -197,6 +208,12 @@ trait SprayRoutes extends CommandDirectives
                       case streamResponse: SprayStreamResponse =>
                         new SprayStreamingResponder(streamResponse, context, status).respond
                       case _ =>
+                        implicit def marshaller[A <: AnyRef] = media match {
+                          case `application/json` =>
+                            Marshaller.delegate[A, String](`application/json`)(it => serialization.write(it))
+                          case _ =>
+                            Marshaller.delegate[A, String](media)(_.toString)
+                        }
                         complete {
                           status -> data
                         }
@@ -339,8 +356,6 @@ trait SprayOptions extends SprayRoutes {
   import context.dispatcher
   addRoute(commandName + "_options", optionsRoute)
 
-  implicit def optionsMarshaller = json4sMarshaller[JValue]
-
   /**
    * Function will return all the allowed headers for the command. Basically if you mixin a trait like
    * SprayGet, it will add the Get method to the allow header. This method should be overridden if you
@@ -398,8 +413,10 @@ trait SprayOptions extends SprayRoutes {
   def ctxComplete: Route = {
     respondWithHeaders(HttpHeaders.Allow(getMethods: _*), HttpHeaders.`Access-Control-Allow-Methods`(getMethods)) {
       mapHeaders(getResponseHeaders) { ctx =>
+        implicit def jsonMarshaller[T <: AnyRef] =
+          Marshaller.delegate[T, String](`application/json`)(serialization.write(_))
         ctx.complete(StatusCodes.OK -> optionsResponse)
-        ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(optionsMarshaller)
+        ToResponseMarshaller.fromMarshaller[JValue](StatusCodes.OK)(jsonMarshaller)
       }
     }
   }
