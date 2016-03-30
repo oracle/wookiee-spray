@@ -33,6 +33,8 @@ class ClientWorker(connect: Http.Connect, val upgradeRequest: HttpRequest) exten
       }
     case UpgradedToWebSocket =>
       log.info("Client upgraded to WebSocket")
+    case x =>
+      log.warning(s"Did not match any logic: $x")
   }
 }
 
