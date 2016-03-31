@@ -363,7 +363,7 @@ trait SprayOptions extends SprayRoutes {
    *
    * @return
    */
-  private def getMethods = {
+   def getMethods = {
     def getMethod[I<:SprayRoutes](klass:Class[I], method:HttpMethod) : Option[HttpMethod] = {
       klass.isAssignableFrom(this.getClass) match {
         case true => Some(method)
