@@ -395,12 +395,7 @@ trait SprayOptions extends SprayRoutes {
             preRoute {
               commandPaths(paths) { bean =>
                 options {
-                  authenticate(OAuth(tokenAuth _, "session")) { info =>
-                    ctxComplete
-                  } ~
-                  authenticate(BasicAuth(basicAuth _, "session")) { info =>
-                    ctxComplete
-                  }
+                   ctxComplete
                 }
               }
             }
