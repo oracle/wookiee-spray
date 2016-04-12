@@ -1,9 +1,13 @@
 package com.webtrends.harness.component.spray.command
 
+import akka.actor.Props
 import akka.testkit.TestActorRef
-import com.webtrends.harness.command.CommandBean
+import com.webtrends.harness.app.Harness
+import com.webtrends.harness.command.{BaseCommandResponse, CommandBean}
+import com.webtrends.harness.component.spray.{SprayManager, SprayTestConfig}
 import com.webtrends.harness.component.spray.route.RouteManager
 import com.webtrends.harness.component.spray.routes.BaseTestCommand
+import com.webtrends.harness.service.test.TestHarness
 import org.json4s.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http._
@@ -17,7 +21,7 @@ class SprayCommandResponseTestCommand extends BaseTestCommand {
   override def path: String = "/test/SprayCommandResponse"
   val responseData = new JObject(List())
 
-  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](
       Some(responseData.asInstanceOf[T]),
       status = StatusCodes.Accepted,
@@ -34,8 +38,9 @@ class SprayCommandResponseSpec extends SpecificationWithJUnit
   with HttpService {
 
   def actorRefFactory = system
-
-  val testCommandRef = TestActorRef[SprayCommandResponseTestCommand]
+  val sys = TestHarness(SprayTestConfig.config, None, Some(Map("wookiee-spray" -> classOf[SprayManager])))
+  val testCommandRef = TestActorRef[SprayCommandResponseTestCommand](
+    Props(new SprayCommandResponseTestCommand))(actorRefFactory)
   val testActor = testCommandRef.underlyingActor
 
   "SprayCommandResponse " should {
