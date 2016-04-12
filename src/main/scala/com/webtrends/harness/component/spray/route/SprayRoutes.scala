@@ -178,7 +178,7 @@ trait SprayRoutes extends CommandDirectives
           case Some(b) => b.appendMap(params); b
           case None => CommandBean(params)
         }
-        onComplete[BaseCommandResponse[T]](execute(Some(updatedBean)).mapTo[BaseCommandResponse[T]]) {
+        onComplete[BaseCommandResponse[T]](execute[T](Some(updatedBean)).mapTo[BaseCommandResponse[T]]) {
           case Success(s) =>
 
             val (status, additionalHeaders) = s match {

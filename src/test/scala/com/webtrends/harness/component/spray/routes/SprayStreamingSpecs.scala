@@ -23,7 +23,7 @@ class SprayStreamingTestCommand(streamSize: Long, chunkBytes: Int, maxStreamByte
   override def path = s"/$cmdName"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
 
     val inputStream = getStream(streamSize)
     Future (new SprayCommandResponse[T](

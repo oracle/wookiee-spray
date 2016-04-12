@@ -14,7 +14,7 @@ class ExceptionCommand extends Command with SprayGet{
   override def commandName: String = "ExceptionCommand"
   override def path: String = "/test/ExceptionCommand"
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     throw CommandException("ExceptionCommand", new Exception("Do not leak this"))
   }
 }
@@ -25,7 +25,7 @@ class ExceptionDebugCommand extends Command with SprayGet with CommandRouteHandl
 
   override def exceptionHandler = debugExceptionHandler
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     throw new Exception("Leak this")
   }
 }

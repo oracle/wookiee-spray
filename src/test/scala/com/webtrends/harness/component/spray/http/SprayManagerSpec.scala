@@ -27,7 +27,7 @@ class InternalTestCommand extends Command with SprayGet {
   override def path: String = "/test/InternalTestCommand"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -38,7 +38,7 @@ class ExternalAndInternalTestCommand extends Command with SprayGet with External
   override def path: String = "/test/ExternalAndInternalTestCommand"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -49,7 +49,7 @@ class ExternalOnlyTestCommand extends Command with SprayGet with ExternalOnly {
   override def path: String = "/test/ExternalOnlyTestCommand"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
