@@ -40,12 +40,12 @@ sealed abstract class TestCommand extends Command {
   implicit val executionContext = context.dispatcher
   override def path: String = "/foo/$key/bar/$key2"
 
-  override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future {
       bean match {
         case Some(b) =>
-          CommandResponse(Some(b.asInstanceOf[T]), "json")
-        case None => CommandResponse(Some("NONE".asInstanceOf[T]), "txt")
+          CommandResponse[T](Some(b.asInstanceOf[T]), "json")
+        case None => CommandResponse[T](Some("NONE".asInstanceOf[T]), "txt")
       }
     }
   }
@@ -70,7 +70,7 @@ class AuthTestCommand extends TestCommand with SprayGet with SprayHead with Spra
 case class TestObject(stringKey:String, intKey:Int)
 
 sealed abstract class EntityBase extends TestCommand {
-  override def execute[T](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[BaseCommandResponse[T]] = {
     Future {
       bean match {
         case Some(b) =>

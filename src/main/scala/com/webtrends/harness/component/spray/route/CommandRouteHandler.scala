@@ -32,6 +32,22 @@ import spray.routing.{AuthenticationFailedRejection, RejectionHandler, Directive
 trait CommandRouteHandler extends Directives {
 
   private val externalLogger = LoggerFactory.getLogger(this.getClass)
+  implicit val excHandler = ExceptionHandler({
+    case ex:Exception =>
+      externalLogger.debug(ex.getMessage, ex)
+      complete(InternalServerError, "Internal Server Error")
+  })
+
+  implicit val rejHandler = RejectionHandler({
+    case AuthenticationFailedRejection(cause, authenticator) :: _ =>
+      externalLogger.debug(s"Auth failed: cause $cause, $authenticator")
+      respondWithHeaders(authenticator) {
+        cause match {
+          case CredentialsMissing => complete(Unauthorized, "Unauthorized")
+          case CredentialsRejected => complete(Unauthorized, "Invalid username/password")
+        }
+      }
+  })
 
   def debugExceptionHandler = handleExceptions(ExceptionHandler({
     case ce:CommandException =>
@@ -48,20 +64,7 @@ trait CommandRouteHandler extends Directives {
       complete(InternalServerError, s"Internal Server Error - ${ex.getMessage}\n\t${ex.toString}")
   }))
 
-  def exceptionHandler = handleExceptions(ExceptionHandler({
-    case ex:Exception =>
-      externalLogger.debug(ex.getMessage, ex)
-      complete(InternalServerError, "Internal Server Error")
-  }))
+  def exceptionHandler = handleExceptions(excHandler)
 
-  def rejectionHandler = handleRejections(RejectionHandler({
-    case AuthenticationFailedRejection(cause, authenticator) :: _ =>
-      externalLogger.debug(s"Auth failed: cause $cause, $authenticator")
-      respondWithHeaders(authenticator) {
-        cause match {
-          case CredentialsMissing => complete(Unauthorized, "Unauthorized")
-          case CredentialsRejected => complete(Unauthorized, "Invalid username/password")
-        }
-      }
-  }))
+  def rejectionHandler = handleRejections(rejHandler)
 }

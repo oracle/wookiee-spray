@@ -18,17 +18,18 @@
  */
 package com.webtrends.harness.component.spray
 
-import com.webtrends.harness.component.spray.route.RouteManager
+import com.webtrends.harness.component.spray.route.{CommandRouteHandler, RouteManager}
 import com.webtrends.harness.component.spray.websocket.WebSocketWorkerHelper
 import com.webtrends.harness.service.Service
 import com.webtrends.harness.service.messages.GetMetaDetails
 import com.webtrends.harness.service.meta.ServiceMetaDetails
-import spray.routing.{Route, HttpService}
+import spray.routing._
+import spray.util.LoggingContext
 
-trait SprayService extends Service with HttpService with WebSocketWorkerHelper {
-
+trait SprayService extends HttpService with Service with WebSocketWorkerHelper with CommandRouteHandler {
   def routes: Route = Map.empty
-
+  implicit val loggingContext = LoggingContext.fromActorSystem(context.system)
+  implicit val routingSettings = RoutingSettings.default(context.system)
   override def preStart(): Unit = {
     initWebSocketWorkerHelper
     super[Service].preStart()
@@ -45,7 +46,8 @@ trait SprayService extends Service with HttpService with WebSocketWorkerHelper {
 
   /**
    * The actor has been asked to respond with some additional meta information.
-   * @return An instance of ServiceMetaDetails
+    *
+    * @return An instance of ServiceMetaDetails
    */
   protected def getMetaDetails: ServiceMetaDetails = {
     ServiceMetaDetails(!routes.equals(Map.empty))

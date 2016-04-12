@@ -1,14 +1,15 @@
 package com.webtrends.harness.component.spray.command
 
 import akka.testkit.TestActorRef
-import com.webtrends.harness.command.{BaseCommandResponse, CommandResponse, CommandBean}
+import com.webtrends.harness.command.CommandBean
 import com.webtrends.harness.component.spray.route.RouteManager
 import com.webtrends.harness.component.spray.routes.BaseTestCommand
 import org.json4s.JObject
 import org.specs2.mutable.SpecificationWithJUnit
 import spray.http._
-import spray.routing.{HttpService, Directives}
+import spray.routing.{Directives, HttpService}
 import spray.testkit.Specs2RouteTest
+
 import scala.concurrent.Future
 
 class SprayCommandResponseTestCommand extends BaseTestCommand {
@@ -16,7 +17,7 @@ class SprayCommandResponseTestCommand extends BaseTestCommand {
   override def path: String = "/test/SprayCommandResponse"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](
       Some(responseData.asInstanceOf[T]),
       status = StatusCodes.Accepted,

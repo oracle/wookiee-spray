@@ -21,7 +21,7 @@ class CORSDefault extends Command with SprayGet with CORS {
   override def path: String = "/test/CORSDefault"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -35,7 +35,7 @@ class CORSRejectNoOrigin extends Command with SprayGet with CORS {
 
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -55,7 +55,7 @@ class CORSLimitedAllowedOrigins extends Command with SprayGet with CORS {
 
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -72,7 +72,7 @@ class CORSCustomResponseHeaders extends Command with SprayGet with CORS {
     )
   )
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](
       data = Some(responseData.asInstanceOf[T]),
       additionalHeaders = List(
@@ -87,7 +87,7 @@ class CORSException extends Command with SprayGet with CORS {
   override def path: String = "/test/CORSException"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     throw new Exception("command failed")
   }
 }

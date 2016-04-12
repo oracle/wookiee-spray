@@ -24,7 +24,7 @@ class CompressResponseCommand extends Command with SprayGet with HttpCompression
   override def path: String = "/test/CompressResponseCommand"
   val responseData = new JObject(List())
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
     Future (new SprayCommandResponse[T](Some(responseData.asInstanceOf[T])))
   }
 }
@@ -39,7 +39,7 @@ class DecompressRequestCommand extends Command with SprayPost with HttpCompressi
   override def commandName: String = "DecompressRequestCommand"
   override def path: String = "/test/DecompressRequestCommand"
 
-  override def execute[T](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
+  override def execute[T:Manifest](bean: Option[CommandBean]): Future[SprayCommandResponse[T]] = {
 
     if(bean.get(CommandBean.KeyEntity).asInstanceOf[JObject].values.contains("foo")) {
       Future (new SprayCommandResponse[T](Some(DecompressRequestCommand.requestJson.asInstanceOf[T])))
