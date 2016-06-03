@@ -51,7 +51,7 @@ class CoreSprayWorker extends HttpServiceActor
 
   def baseRoutes: Route = {
     unmatchedPath { remainingPath =>
-      complete(StatusCodes.NotFound)
+      complete(StatusCodes.NotFound, "The requested resource could not be found.")
     }
   }
 
