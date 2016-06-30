@@ -74,7 +74,7 @@ class CoreWebSocketServer(port:Int, settings:Option[ServerSettings]=None) extend
     context.become(binding)
   }
 
-  override protected def getHealth: Future[HealthComponent] = {
+  override def checkHealth: Future[HealthComponent] = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     val future = system.actorSelection(server.path.toString.concat("/listener-0")) ? Http.GetStats

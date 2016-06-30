@@ -128,7 +128,7 @@ class CoreSprayServer[T <: CoreSprayWorker:ClassTag](port:Int, settings:Option[S
    *
    * @return
    */
-  override protected def getHealth: Future[HealthComponent] = {
+  override def checkHealth: Future[HealthComponent] = {
     val future = system.actorSelection(httpServer.path.toString.concat("/listener-0")) ? Http.GetStats
     val p = Promise[HealthComponent]()
 
@@ -137,14 +137,14 @@ class CoreSprayServer[T <: CoreSprayWorker:ClassTag](port:Int, settings:Option[S
         p complete Success(HealthComponent(
           "http-server",
           ComponentState.CRITICAL,
-          "The internal http server is not running: " + f.exception.getMessage,
+          s"Http server is not running on port ${port}:${f.exception.getMessage}",
           None)
         )
       case s: Success[_] =>
         p complete Success(HealthComponent(
           "http-server",
           ComponentState.NORMAL,
-          s"The internal http server is running on port ${port}",
+          s"Http server is running on port ${port}",
           Some(s.value.asInstanceOf[Stats]))
         )
     }

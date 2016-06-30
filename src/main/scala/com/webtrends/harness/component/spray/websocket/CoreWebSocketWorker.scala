@@ -2,24 +2,30 @@ package com.webtrends.harness.component.spray.websocket
 
 import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
+import akka.util.Timeout
+import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.CommandBean
-import com.webtrends.harness.health.ActorHealth
+import com.webtrends.harness.utils.ConfigUtil
 import spray.can.server.UHttp
 import spray.can.websocket.frame.TextFrame
 import spray.can.{Http, websocket}
 import spray.routing.HttpServiceActor
+import scala.concurrent.duration._
 
 import scala.util.{Failure, Success}
 
 /**
  * Created by wallinm on 3/27/15.
  */
-class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceActor with ActorHealth with websocket.WebSocketServerWorker with AckThrottling {
+class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceActor with websocket.WebSocketServerWorker with AckThrottling {
   import scala.concurrent.ExecutionContext.Implicits.global
-  override def receive = health orElse handshaking orElse closeLogic orElse stashing
+  override def receive = handshaking orElse closeLogic orElse stashing
 
   var worker: Option[ActorRef] = None
   var bean: Option[CommandBean] = None
+
+  implicit val askTimeout:Timeout =
+    ConfigUtil.getDefaultTimeout(context.system.settings.config, HarnessConstants.KeyDefaultTimeout, Timeout(10 seconds))
 
   override def handshaking: Receive = {
     // when a client request for upgrading to websocket comes in, we send
@@ -47,7 +53,7 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
       case Some(w) =>
         w.ask(SetBean(bean)) onComplete {
           case Success (s) =>
-            context.become(health orElse businessLogic orElse closeLogic)
+            context.become(businessLogic orElse closeLogic)
             self ! websocket.UpgradedToWebSocket // notify Upgraded to WebSocket protocol
             unstashAll()
           case Failure (f) =>
