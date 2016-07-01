@@ -38,7 +38,6 @@ import org.json4s.ext.JodaTimeSerializers
 
 
 class CoreSprayWorker extends HttpServiceActor
-    with ActorHealth
     with ActorLoggingAdapter
     with CIDRDirectives
     with Json4sSupport
@@ -60,13 +59,13 @@ class CoreSprayWorker extends HttpServiceActor
   /**
     * Establish our routes and other receive handlers
     */
-  def initializing: Receive = health  orElse {
+  def initializing: Receive = {
     case HttpStartProcessing =>
       context.become(running)
     case HttpReloadRoutes => // Do nothing
   }
 
-  def running: Receive = health orElse runRoute(logRequestResponse(myLog _) {
+  def running: Receive = runRoute(logRequestResponse(myLog _) {
     getRoutes
   }) orElse {
     case HttpReloadRoutes =>
