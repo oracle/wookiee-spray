@@ -211,6 +211,8 @@ trait SprayRoutes extends CommandDirectives
                         implicit def marshaller[A <: AnyRef] = media match {
                           case `application/json` =>
                             Marshaller.delegate[A, String](`application/json`)(it => serialization.write(it))
+                          case _ if data.isInstanceOf[Array[Byte]] =>
+                            Marshaller.delegate[A, Array[Byte]](media)(it => data.asInstanceOf[Array[Byte]])
                           case _ =>
                             Marshaller.delegate[A, String](media)(_.toString)
                         }
