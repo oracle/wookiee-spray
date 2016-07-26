@@ -46,6 +46,10 @@ import scala.util.{Failure, Success, Try}
 
 class SprayCommandBean(var authInfo: Option[Map[String, Any]]) extends CommandBean
 
+object SprayRoutes {
+  val KeyEntityType = "Request-Entity-Type"
+}
+
 /**
  * Used for command functions that are required for all Spray traits that you can add to commands
  * to add GET, POST, DELETE, UPDATE routes to the command
@@ -81,7 +85,7 @@ trait SprayRoutes extends CommandDirectives
   // to not know at all what the underlying component you are using, as long has they handle the same messages.
 
   // default the marshaller to the lift json marshaller
-  implicit def json4sUnmarshaller[T: Manifest] = {
+  def json4sUnmarshaller[T: Manifest] = {
     implicit def json4sFormats = Serialization.formats(NoTypeHints) ++ JodaTimeSerializers.all
     Unmarshaller[T](MediaTypes.`application/json`) {
       case x: HttpEntity.NonEmpty ⇒
@@ -296,10 +300,7 @@ sealed protected trait EntityRoutes extends SprayRoutes {
 
   import context.dispatcher
 
-  // default the unmarshaller to lift json unmarshaller
-  implicit def InputUnmarshaller[T: Manifest] = json4sUnmarshaller[T]
-
-  protected def entityRoute[T <: AnyRef : Manifest](httpMethod: Directive0): Route = {
+  protected def entityRoute[T <: AnyRef](httpMethod: Directive0)(implicit unmarshaller: Unmarshaller[T]): Route = {
     corsResponse {
       corsRequest {
         getRejectionHandler {
@@ -309,16 +310,18 @@ sealed protected trait EntityRoutes extends SprayRoutes {
                 commandPaths(paths) { bean =>
                   httpMethod {
                     entity(as[T]) { po =>
-                      bean.appendMap(Map(CommandBean.KeyEntity -> po))
-                      mapHeaders(getResponseHeaders) {
-                        authenticate(OAuth(tokenAuth _, "session")) { info =>
-                          bean.authInfo = Some(info)
-                          innerExecute(Some(bean))
-                        } ~
+                      extractContentType { ct =>
+                        bean.appendMap(Map(CommandBean.KeyEntity -> po, SprayRoutes.KeyEntityType -> ct))
+                        mapHeaders(getResponseHeaders) {
+                          authenticate(OAuth(tokenAuth _, "session")) { info =>
+                            bean.authInfo = Some(info)
+                            innerExecute(Some(bean))
+                          } ~
                           authenticate(BasicAuth(basicAuth _, "session")) { info =>
                             bean.authInfo = Some(info)
                             innerExecute(Some(bean))
                           }
+                        }
                       }
                     }
                   }
@@ -332,14 +335,30 @@ sealed protected trait EntityRoutes extends SprayRoutes {
   }
 }
 
+trait ByteUnmarshalling {
+  implicit def InputUnmarshaller[Array[Byte]] = BasicUnmarshallers.ByteArrayUnmarshaller
+}
+
+
 /**
  * Trait for adding post routes to Command entity extraction will default to JObject
  */
 trait SprayPost extends EntityRoutes {
   this : Command =>
+
+  implicit def InputUnmarshaller[T: Manifest] = json4sUnmarshaller[T]
+
   protected def postRoute[T<:AnyRef:Manifest] = entityRoute[T](MethodDirectives.post)
   def setRoute : Route = postRoute[JObject]
   addRoute(commandName + "_post", setRoute)
+}
+
+/**
+  * Trait for adding post routes to Command that will perform no unmarshalling.
+  * The request data will be handed off as a raw Array[Byte]
+  */
+trait SprayPostBytes extends EntityRoutes with ByteUnmarshalling { this : Command =>
+  addRoute(commandName + "_post", entityRoute[Array[Byte]](MethodDirectives.post))
 }
 
 /**
@@ -355,7 +374,6 @@ trait SprayDelete extends SprayRoutes {
  */
 trait SprayOptions extends SprayRoutes {
   this : Command =>
-  import context.dispatcher
   addRoute(commandName + "_options", optionsRoute)
 
   /**
@@ -440,9 +458,20 @@ trait SprayPatch extends SprayRoutes {
  */
 trait SprayPut extends EntityRoutes {
   this : Command =>
+
+  implicit def InputUnmarshaller[T: Manifest] = json4sUnmarshaller[T]
+
   protected def putRoute[T<:AnyRef:Manifest] = entityRoute[T](MethodDirectives.put)
   def setRoute : Route = putRoute[JObject]
   addRoute(commandName + "_put", setRoute)
+}
+
+/**
+  * Trait for adding put routes to Command that will perform no unmarshalling.
+  * The request data will be handed off as a raw Array[Byte]
+  */
+trait SprayPutBytes extends EntityRoutes with ByteUnmarshalling { this : Command =>
+  addRoute(commandName + "_put", entityRoute[Array[Byte]](MethodDirectives.put))
 }
 
 

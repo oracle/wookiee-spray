@@ -18,7 +18,7 @@
  */
 package com.webtrends.harness.component.spray.directive
 
-import spray.http.MediaTypes
+import spray.http.{HttpHeaders, MediaTypes}
 import spray.routing.Directives
 
 trait BaseDirectives extends Directives {
@@ -26,4 +26,7 @@ trait BaseDirectives extends Directives {
   val respondJson = respondWithMediaType(MediaTypes.`application/json`)
   val respondPlain = respondWithMediaType(MediaTypes.`text/plain`)
 
+  val extractContentType = optionalHeaderValuePF {
+    case HttpHeaders.`Content-Type`(ct) => ct.toString()
+  }
 }
