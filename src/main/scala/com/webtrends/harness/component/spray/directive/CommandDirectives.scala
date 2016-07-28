@@ -22,12 +22,13 @@ package com.webtrends.harness.component.spray.directive
 import com.webtrends.harness.command.{Command, CommandBean}
 import com.webtrends.harness.component.spray.route.SprayCommandBean
 import spray.http.HttpHeader
+import spray.routing.directives.HeaderDirectives
 import spray.routing.{Directive0, Directive1}
 
 /**
  * @author Michael Cuthbert on 12/12/14.
  */
-trait CommandDirectives extends BaseDirectives {
+trait CommandDirectives extends BaseDirectives with HeaderDirectives {
 
   /**
    * Matches a string path like '/test/ping' to the current uri and returns
@@ -43,9 +44,11 @@ trait CommandDirectives extends BaseDirectives {
     extract(_.request.uri.path.toString()) flatMap {
       pa => Command.matchPath(path, pa) match {
         case Some(s) =>
-          val retBean = new SprayCommandBean(None)
-          retBean.appendMap(s.toMap)
-          provide(retBean)
+          getHeaders flatMap { headers =>
+            val retBean = new SprayCommandBean(None, headers)
+            retBean.appendMap(s.toMap)
+            provide(retBean)
+          }
         case None => reject
       }
     }
@@ -60,10 +63,11 @@ trait CommandDirectives extends BaseDirectives {
    * @return
    */
   def commandPaths(paths:Map[String, String]) : Directive1[SprayCommandBean] = {
-    extract(_.request.uri.path.toString()) flatMap {
-      pa =>
+    extract(_.request.uri.path.toString()) flatMap { pa =>
+      getHeaders flatMap { headers =>
         var matchFound = false
-        val retBean = new SprayCommandBean(None)
+
+        val retBean = new SprayCommandBean(None, headers)
         paths.toStream.takeWhile(_ => !matchFound) foreach {
           path => Command.matchPath(path._2, pa) match {
             case Some(b) =>
@@ -78,7 +82,12 @@ trait CommandDirectives extends BaseDirectives {
         } else {
           reject
         }
+      }
     }
+  }
+
+  def getHeaders: Directive1[List[HttpHeader]] = {
+    extract(_.request.headers)
   }
 
   /**
