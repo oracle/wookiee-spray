@@ -22,13 +22,12 @@ package com.webtrends.harness.component.spray.directive
 import com.webtrends.harness.command.{Command, CommandBean}
 import com.webtrends.harness.component.spray.route.SprayCommandBean
 import spray.http.HttpHeader
-import spray.routing.directives.HeaderDirectives
 import spray.routing.{Directive0, Directive1}
 
 /**
  * @author Michael Cuthbert on 12/12/14.
  */
-trait CommandDirectives extends BaseDirectives with HeaderDirectives {
+trait CommandDirectives extends BaseDirectives {
 
   /**
    * Matches a string path like '/test/ping' to the current uri and returns
