@@ -44,7 +44,7 @@ import spray.routing.directives.MethodDirectives
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
-class SprayCommandBean(var authInfo: Option[Map[String, Any]], headers: List[HttpHeader]) extends CommandBean
+class SprayCommandBean(var authInfo: Option[Map[String, Any]], val headers: List[HttpHeader]) extends CommandBean
 
 object SprayRoutes {
   val KeyEntityType = "Request-Entity-Type"
