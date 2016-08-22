@@ -15,14 +15,15 @@ import com.webtrends.harness.service.ServiceManager
 import com.webtrends.harness.service.ServiceManager.GetMetaDataByName
 import com.webtrends.harness.service.messages.GetMetaData
 import com.webtrends.harness.service.meta.ServiceMetaData
-import org.json4s._
 import org.joda.time.{DateTime, DateTimeZone}
+import org.json4s._
 
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 class InternalSprayWorker extends CoreSprayWorker {
   import context.dispatcher
-  implicit val timeout = Timeout(spSettings.requestTimeout.toMillis)
+  implicit val timeout = Timeout(spSettings.requestTimeout.toMillis milliseconds)
 
   val healthActor = actorRefFactory.actorSelection(HarnessConstants.HealthFullName)
   val serviceActor = actorRefFactory.actorSelection(HarnessConstants.ServicesFullName)
