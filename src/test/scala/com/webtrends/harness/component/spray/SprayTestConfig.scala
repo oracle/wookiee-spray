@@ -41,7 +41,7 @@ object SprayTestConfig {
       }
       akka.actor.deployment {
         /system/component/wookiee-spray/spray-server/spray-base {
-          router = round-robin-pool
+          router = round-robin
           nr-of-instances = 3
         }
       }
