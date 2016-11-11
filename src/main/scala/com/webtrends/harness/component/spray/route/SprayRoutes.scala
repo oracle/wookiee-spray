@@ -136,6 +136,15 @@ trait SprayRoutes extends CommandDirectives
   }
 
   /**
+    * Override to return whether or not we have access to this endpoint with the provided bean
+    * @param bean Bean with auth info on it
+    * @return true if passed, false if failed
+    */
+  def checkAccess(bean: SprayCommandBean): Boolean = {
+    true
+  }
+
+  /**
    * Function can be used to override any directives that you wish to use at the beginning of
    * the route
    */
@@ -246,11 +255,13 @@ trait SprayRoutes extends CommandDirectives
                     commandPaths(paths) { bean =>
                       authenticate(OAuth(tokenAuth _, "session")) { info =>
                         bean.authInfo = Some(info)
-                        innerExecute(Some(bean))
+                        if (checkAccess(bean)) innerExecute(Some(bean))
+                        else complete(StatusCodes.Unauthorized -> "")
                       } ~
                         authenticate(BasicAuth(basicAuth _, "session")) { info =>
                           bean.authInfo = Some(info)
-                          innerExecute(Some(bean))
+                          if (checkAccess(bean)) innerExecute(Some(bean))
+                          else complete(StatusCodes.Unauthorized -> "")
                         }
                     }
                   }
@@ -315,11 +326,13 @@ sealed protected trait EntityRoutes extends SprayRoutes {
                         mapHeaders(getResponseHeaders) {
                           authenticate(OAuth(tokenAuth _, "session")) { info =>
                             bean.authInfo = Some(info)
-                            innerExecute(Some(bean))
+                            if (checkAccess(bean)) innerExecute(Some(bean))
+                            else complete(StatusCodes.Unauthorized -> "")
                           } ~
                           authenticate(BasicAuth(basicAuth _, "session")) { info =>
                             bean.authInfo = Some(info)
-                            innerExecute(Some(bean))
+                            if (checkAccess(bean)) innerExecute(Some(bean))
+                            else complete(StatusCodes.Unauthorized -> "")
                           }
                         }
                       }
