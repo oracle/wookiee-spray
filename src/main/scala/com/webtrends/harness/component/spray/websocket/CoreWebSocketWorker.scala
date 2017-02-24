@@ -10,8 +10,8 @@ import spray.can.server.UHttp
 import spray.can.websocket.frame.TextFrame
 import spray.can.{Http, websocket}
 import spray.routing.HttpServiceActor
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 /**
@@ -66,7 +66,7 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
   }
 
   def businessLogic: Receive = {
-    case Push(msg) =>
+    case Push(msg, _) =>
       sendWithAck(TextFrame(msg))
     case ev: Http.ConnectionClosed =>
       worker match {

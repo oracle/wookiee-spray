@@ -4,6 +4,8 @@ import akka.actor.{ActorLogging, ActorRef, ActorSystem, Stash}
 import akka.dispatch._
 import akka.io.Tcp
 import com.typesafe.config.Config
+import com.webtrends.harness.component.metrics.metrictype.Meter
+import com.webtrends.harness.logging.LoggingAdapter
 import spray.can.websocket.FrameCommandFailed
 import spray.can.websocket.frame.{Frame, FrameRender, TextFrame}
 
@@ -65,11 +67,26 @@ private object Ack extends Tcp.Event with spray.io.Droppable {
  * re-stashing messages.
  */
 case class HighPriorityAckMailbox(settings: ActorSystem.Settings, config: Config)
-  extends PriorityUnboundedDequeMailbox(settings, config) {
+  extends PriorityUnboundedDequeMailbox(settings, config) with LoggingAdapter {
+
+  val dupeTimer = Meter("data-websocket-frames-replaced")
+
   override def priority(e: Envelope): Boolean = e.message match {
     case Ack => true
     case fail: FrameCommandFailed => true
     case Tcp.WritingResumed => true
     case _ => false
+  }
+
+  // Add special logic for Push messages.
+  // If we receive consecutive Push messages with the same dupeId, we only want to keep the last one.
+  override def isDupe(lastEnv: Envelope, newEnv: Envelope): Boolean = {
+    (lastEnv.message, newEnv.message) match {
+      case (Push(m1, Some(d1)), Push(m2, Some(d2))) if d1 == d2 =>
+        dupeTimer.mark
+        true
+      case _ =>
+        false
+    }
   }
 }

@@ -7,7 +7,11 @@ import spray.can.websocket.FrameCommandFailed
 
 import scala.util.Success
 
-final case class Push(msg: String)
+// Trait used to deal with back pressure on a websocket.
+// If there are two consecutive messages to be pushed with the same WSDupeTypeId, only send the last one.
+trait WSDupeTypeId
+
+final case class Push(msg: String, dupeType: Option[WSDupeTypeId] = None)
 final case class SetBean(bean: Option[CommandBean])
 
 /**
@@ -26,9 +30,9 @@ trait WebSocketWorker extends HActor {
   }
 
   def businessLogic: Receive = {
-    case Push(msg) =>
-      log.debug("Got message " + msg)
-      context.parent ! Push(msg)
+    case p: Push =>
+      log.debug("Got message " + p.msg)
+      context.parent ! p
 
     case SetBean(b) =>
       bean = b
