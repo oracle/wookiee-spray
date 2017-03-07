@@ -38,14 +38,14 @@ trait WebSocketWorker extends HActor {
       log.error("Server frame command failed", x)
 
     case websocket.UpgradedToWebSocket =>
-      log.debug("Server upgraded to WebSocket")
-
-    case x => log.debug("Server received unknown message " + x)
+      log.debug("Server upgraded to WebSocket")    
   }
 
   def closeLogic: Receive = {
     case ev: Http.ConnectionClosed =>
       context.stop(self)
       log.debug("Server connection closed on event: {}", ev)
+    
+    case x => log.debug("Server received unknown message " + x)
   }
 }
