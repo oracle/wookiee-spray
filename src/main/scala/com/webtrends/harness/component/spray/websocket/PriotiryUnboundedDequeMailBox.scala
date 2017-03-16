@@ -1,6 +1,7 @@
 package com.webtrends.harness.component.spray.websocket
 
 import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.locks.ReentrantLock
 
 import akka.actor._
 import akka.dispatch._
@@ -44,16 +45,27 @@ object PriorityUnboundedDequeMailbox {
   class MessageQueue(priority: Envelope => Boolean, isDupe: (Envelope, Envelope) => Boolean) extends LinkedBlockingDeque[Envelope] with UnboundedDequeBasedMessageQueue {
     final val queue = this
 
-    override def enqueue(receiver: ActorRef, handle: Envelope): Unit =
-      if (priority(handle)) {
-        super.enqueueFirst(receiver, handle)
-      } else if (size > 0 && isDupe(handle, queue.peekLast())) {
+    val elock = new ReentrantLock()
+
+    override def enqueue(receiver: ActorRef, handle: Envelope): Unit = {
+      elock.synchronized {
+        if (priority(handle)) {
+          super.enqueueFirst(receiver, handle)
+        } else if (size > 0 && isDupe(handle, queue.peekLast())) {
           super.removeLast()
           super.enqueue(receiver, handle)
+        }
+        else {
+          super.enqueue(receiver, handle)
+        }
       }
-      else {
-        super.enqueue(receiver, handle)
+    }
+
+    override def dequeue(): Envelope = {
+      elock.synchronized {
+        super.dequeue()
       }
+    }
   }
 
 }
