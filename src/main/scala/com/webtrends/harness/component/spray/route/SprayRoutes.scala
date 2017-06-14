@@ -184,61 +184,65 @@ trait SprayRoutes extends CommandDirectives
     pass
   }
 
-  protected def innerExecute[T<:AnyRef:Manifest](bean:Option[CommandBean]=None) = {
+  protected def innerExecute[T<:AnyRef:Manifest](bean:Option[SprayCommandBean]=None) = {
     parameterMap {
       params =>
-        val updatedBean = bean match {
-          case Some(b) => b.appendMap(params); b
-          case None => CommandBean(params)
+        val beanWithQuery = bean.getOrElse(new SprayCommandBean(None, List.empty[HttpHeader]))
+        beanWithQuery.appendMap(params)
+        if (!checkAccess(beanWithQuery)) {
+          complete(StatusCodes.Unauthorized -> "")
         }
-        onComplete[BaseCommandResponse[T]](execute[T](Some(updatedBean)).mapTo[BaseCommandResponse[T]]) {
-          case Success(s) =>
+        else {
+          onComplete[BaseCommandResponse[T]](execute[T](Some(beanWithQuery)).mapTo[BaseCommandResponse[T]]) {
+            case Success(s) =>
 
-            val (status, additionalHeaders) = s match {
-              case scr: SprayCommandResponse[T] =>
-                (scr.status, scr.additionalHeaders)
-              case cr: CommandResponse[T] =>
-                val statusCode = if (s.data.nonEmpty) responseStatusCode else StatusCodes.NoContent
-                (statusCode, List.empty)
-            }
+              val (status, additionalHeaders) = s match {
+                case scr: SprayCommandResponse[T] =>
+                  (scr.status, scr.additionalHeaders)
+                case cr: CommandResponse[T] =>
+                  val statusCode = if (s.data.nonEmpty) responseStatusCode else StatusCodes.NoContent
+                  (statusCode, List.empty)
+              }
 
-            s.data match {
-              case Some(data) =>
-                val media = MediaTypes.forExtension(s.responseType) match {
-                  case Some(m) => m
-                  case None =>
-                    val mt = Try({
-                      val rt = s.responseType.split("/")
-                      MediaTypes.getForKey((rt(0), rt(1))).get
-                    }) recover {
-                      case _ => MediaTypes.`application/json`
-                    }
-                    mt getOrElse MediaTypes.`application/json`
-                }
-                respondWithMediaType(media) {
-                  respondWithHeaders(additionalHeaders) {
-                    data match {
-                      case streamResponse: SprayStreamResponse =>
-                        new SprayStreamingResponder(streamResponse, context, status).respond
-                      case _ =>
-                        implicit def marshaller[A <: AnyRef] = media match {
-                          case `application/json` =>
-                            Marshaller.delegate[A, String](`application/json`)(it => serialization.write(it))
-                          case _ if data.isInstanceOf[Array[Byte]] =>
-                            Marshaller.delegate[A, Array[Byte]](media)(it => data.asInstanceOf[Array[Byte]])
-                          case _ =>
-                            Marshaller.delegate[A, String](media)(_.toString)
-                        }
-                        complete {
-                          status -> data
-                        }
+              s.data match {
+                case Some(data) =>
+                  val media = MediaTypes.forExtension(s.responseType) match {
+                    case Some(m) => m
+                    case None =>
+                      val mt = Try({
+                        val rt = s.responseType.split("/")
+                        MediaTypes.getForKey((rt(0), rt(1))).get
+                      }) recover {
+                        case _ => MediaTypes.`application/json`
+                      }
+                      mt getOrElse MediaTypes.`application/json`
+                  }
+                  respondWithMediaType(media) {
+                    respondWithHeaders(additionalHeaders) {
+                      data match {
+                        case streamResponse: SprayStreamResponse =>
+                          new SprayStreamingResponder(streamResponse, context, status).respond
+                        case _ =>
+                          implicit def marshaller[A <: AnyRef] = media match {
+                            case `application/json` =>
+                              Marshaller.delegate[A, String](`application/json`)(it => serialization.write(it))
+                            case _ if data.isInstanceOf[Array[Byte]] =>
+                              Marshaller.delegate[A, Array[Byte]](media)(it => data.asInstanceOf[Array[Byte]])
+                            case _ =>
+                              Marshaller.delegate[A, String](media)(_.toString)
+                          }
+
+                          complete {
+                            status -> data
+                          }
+                      }
                     }
                   }
-                }
-              case None =>
-                complete(status)
-            }
-          case Failure(f) => throw f
+                case None =>
+                  complete(status)
+              }
+            case Failure(f) => throw f
+          }
         }
     }
   }
@@ -255,14 +259,12 @@ trait SprayRoutes extends CommandDirectives
                     commandPaths(paths) { bean =>
                       authenticate(OAuth(tokenAuth _, "session")) { info =>
                         bean.authInfo = Some(info)
-                        if (checkAccess(bean)) innerExecute(Some(bean))
-                        else complete(StatusCodes.Unauthorized -> "")
+                        innerExecute(Some(bean))
                       } ~
-                        authenticate(BasicAuth(basicAuth _, "session")) { info =>
-                          bean.authInfo = Some(info)
-                          if (checkAccess(bean)) innerExecute(Some(bean))
-                          else complete(StatusCodes.Unauthorized -> "")
-                        }
+                      authenticate(BasicAuth(basicAuth _, "session")) { info =>
+                        bean.authInfo = Some(info)
+                        innerExecute(Some(bean))
+                      }
                     }
                   }
                 }
@@ -326,13 +328,11 @@ sealed protected trait EntityRoutes extends SprayRoutes {
                         mapHeaders(getResponseHeaders) {
                           authenticate(OAuth(tokenAuth _, "session")) { info =>
                             bean.authInfo = Some(info)
-                            if (checkAccess(bean)) innerExecute(Some(bean))
-                            else complete(StatusCodes.Unauthorized -> "")
+                            innerExecute(Some(bean))
                           } ~
                           authenticate(BasicAuth(basicAuth _, "session")) { info =>
                             bean.authInfo = Some(info)
-                            if (checkAccess(bean)) innerExecute(Some(bean))
-                            else complete(StatusCodes.Unauthorized -> "")
+                            innerExecute(Some(bean))
                           }
                         }
                       }
