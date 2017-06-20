@@ -190,7 +190,7 @@ trait SprayRoutes extends CommandDirectives
         val beanWithQuery = bean.getOrElse(new SprayCommandBean(None, List.empty[HttpHeader]))
         beanWithQuery.appendMap(params)
         if (!checkAccess(beanWithQuery)) {
-          complete(StatusCodes.Unauthorized -> "")
+          complete(StatusCodes.Forbidden -> "")
         }
         else {
           onComplete[BaseCommandResponse[T]](execute[T](Some(beanWithQuery)).mapTo[BaseCommandResponse[T]]) {
