@@ -42,7 +42,7 @@ class SprayManager(name:String) extends Component(name)
     case true => Some(config.getInt(externalHttpPortPath))
     case false => None
   }
-
+  val wsServerEnabled = ConfigUtil.getDefaultValue(s"$name.websocket.enabled", config.getBoolean, true)
   val websocketPort = ConfigUtil.getDefaultValue(s"$name.websocket-port", config.getInt, 8081)
   var rCount = new AtomicInteger(0)
 
@@ -58,8 +58,8 @@ class SprayManager(name:String) extends Component(name)
 
   private def expectedRunningCount = {
     externalHttpPort match {
-      case None => 2
-      case Some(_) => 3
+      case None => if (wsServerEnabled) 2 else 1
+      case Some(_) => if (wsServerEnabled) 3 else 2
     }
   }
 
@@ -73,7 +73,9 @@ class SprayManager(name:String) extends Component(name)
 
   override def start = {
     startSprayServer(internalHttpPort, externalHttpPort, Some(spSettings))
-    startWebSocketServer(websocketPort, Some(spSettings))
+    if (wsServerEnabled) {
+      startWebSocketServer(websocketPort, Some(spSettings))
+    } else log.info("Spray Websocket Server Disabled, Not Starting")
     // start the HttpClient actor
     startSprayClient
   }
