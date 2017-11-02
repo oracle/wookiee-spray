@@ -30,8 +30,10 @@ trait SprayHttpServer { this : Actor =>
   var externalHttpServer:Option[ActorRef] = None
 
 
-  def startSprayServer(internalPort:Int, externalPort: Option[Int], settings:Option[ServerSettings]=None)  = {
-    internalHttpServer = Some(context.actorOf(CoreSprayServer.props[InternalSprayWorker](internalPort, settings), SprayHttpServer.SprayInternalServerName))
+  def startSprayServer(internalPort:Int, externalPort: Option[Int], settings:Option[ServerSettings]=None, internalEnabled: Boolean = true)  = {
+    if (internalEnabled) {
+      internalHttpServer = Some(context.actorOf(CoreSprayServer.props[InternalSprayWorker](internalPort, settings), SprayHttpServer.SprayInternalServerName))
+    }
     externalPort match {
       case None =>
       case Some(p) =>
