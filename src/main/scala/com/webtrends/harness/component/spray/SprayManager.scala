@@ -20,9 +20,8 @@ package com.webtrends.harness.component.spray
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.webtrends.harness.app.HarnessActor.SystemReady
 import com.webtrends.harness.component.spray.client.SprayClient
-import com.webtrends.harness.component.{ComponentStarted, Component}
+import com.webtrends.harness.component.{Component, ComponentStarted}
 import com.webtrends.harness.utils.ConfigUtil
 import spray.can.server.ServerSettings
 
@@ -35,6 +34,7 @@ class SprayManager(name:String) extends Component(name)
     with SprayWebSocketServer {
 
   val spSettings = ServerSettings(config)
+  val internalEnabled = ConfigUtil.getDefaultValue(s"$name.internal.enabled", config.getBoolean, true)
   val internalHttpPort = ConfigUtil.getDefaultValue(s"$name.http-port", config.getInt, 8080)
 
   val externalHttpPortPath: String = s"$name.http-external-port"
@@ -57,10 +57,10 @@ class SprayManager(name:String) extends Component(name)
   }
 
   private def expectedRunningCount = {
-    externalHttpPort match {
+    (externalHttpPort match {
       case None => if (wsServerEnabled) 2 else 1
       case Some(_) => if (wsServerEnabled) 3 else 2
-    }
+    }) - (if (internalEnabled) 0 else 1)
   }
 
   private def checkRunning() = {
@@ -72,7 +72,7 @@ class SprayManager(name:String) extends Component(name)
   }
 
   override def start = {
-    startSprayServer(internalHttpPort, externalHttpPort, Some(spSettings))
+    startSprayServer(internalHttpPort, externalHttpPort, Some(spSettings), internalEnabled)
     if (wsServerEnabled) {
       startWebSocketServer(websocketPort, Some(spSettings))
     } else log.info("Spray Websocket Server Disabled, Not Starting")
