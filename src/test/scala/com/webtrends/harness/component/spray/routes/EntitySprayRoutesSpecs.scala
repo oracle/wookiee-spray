@@ -21,15 +21,15 @@ package com.webtrends.harness.component.spray.routes
 
 import akka.testkit.TestActorRef
 import com.webtrends.harness.component.spray.route.RouteManager
-import org.specs2.mutable.SpecificationWithJUnit
+import org.scalatest.FunSuite
 import spray.http.{ContentTypes, HttpEntity}
-import spray.routing.{HttpService, Directives}
-import spray.testkit.Specs2RouteTest
+import spray.routing.{Directives, HttpService}
+import spray.testkit.ScalatestRouteTest
 
 /**
  * @author Michael Cuthbert on 12/19/14.
  */
-class EntitySprayRoutesSpecs extends SpecificationWithJUnit with Directives with Specs2RouteTest with HttpService {
+class EntitySprayRoutesSpecs extends FunSuite with Directives with ScalatestRouteTest with HttpService {
   def actorRefFactory = system
 
   val postCommandRef = TestActorRef[EntityTestCommand]
@@ -39,27 +39,15 @@ class EntitySprayRoutesSpecs extends SpecificationWithJUnit with Directives with
   val customCommandRef = TestActorRef[CustomTestCommand]
   val customActor = customCommandRef.underlyingActor
 
-  "Entity Command" should {
-    "post requests should marshall entities correctly" in {
-      Post("/foo/key1/bar/key2", HttpEntity(ContentTypes.`application/json`, """{"stringKey":"string","intKey":1234}""")) ~> RouteManager.getRoute("EntityTest_post").get ~> check {
-        responseAs[String] == """{"stringKey":"string","intKey":1234}""" && handled must beTrue
-      }
+  test("post requests should marshall entities correctly") {
+    Post("/foo/key1/bar/key2", HttpEntity(ContentTypes.`application/json`, """{"stringKey":"string","intKey":1234}""")) ~> RouteManager.getRoute("EntityTest_post").get ~> check {
+      assert(responseAs[String] == """{"stringKey":"string","intKey":1234}""" && handled)
     }
   }
 
-  /*"Marshall Command" should {
-    "put requests should handle custom marshalling and unmarshalling correctly" in {
-      Put("/foo/key1/bar/key2", HttpEntity(ContentTypes.`text/plain`, "strV:45")) ~> RouteManager.getRoute("MarshallTest_put").get ~> check {
-        responseAs[String] == "String is strV and Int is 45"
-      }
-    }
-  }*/
-
-  "Custom Command" should {
-    "handle custom route correctly" in {
-      Get("/foo/bar") ~> RouteManager.getRoute("CustomTest_custom").get ~> check {
-        handled must beTrue
-      }
+  test("handle custom route correctly") {
+    Get("/foo/bar") ~> RouteManager.getRoute("CustomTest_custom").get ~> check {
+      assert(handled)
     }
   }
 }

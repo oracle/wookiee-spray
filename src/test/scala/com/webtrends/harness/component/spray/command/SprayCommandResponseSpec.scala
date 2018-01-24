@@ -2,17 +2,16 @@ package com.webtrends.harness.component.spray.command
 
 import akka.actor.Props
 import akka.testkit.TestActorRef
-import com.webtrends.harness.app.Harness
 import com.webtrends.harness.command.{BaseCommandResponse, CommandBean}
-import com.webtrends.harness.component.spray.{SprayManager, SprayTestConfig}
 import com.webtrends.harness.component.spray.route.RouteManager
 import com.webtrends.harness.component.spray.routes.BaseTestCommand
+import com.webtrends.harness.component.spray.{SprayManager, SprayTestConfig}
 import com.webtrends.harness.service.test.TestHarness
 import org.json4s.JObject
-import org.specs2.mutable.SpecificationWithJUnit
+import org.scalatest.FunSuite
 import spray.http._
 import spray.routing.{Directives, HttpService}
-import spray.testkit.Specs2RouteTest
+import spray.testkit.ScalatestRouteTest
 
 import scala.concurrent.Future
 
@@ -32,9 +31,9 @@ class SprayCommandResponseTestCommand extends BaseTestCommand {
   }
 }
 
-class SprayCommandResponseSpec extends SpecificationWithJUnit
+class SprayCommandResponseSpec extends FunSuite
   with Directives
-  with Specs2RouteTest
+  with ScalatestRouteTest
   with HttpService {
 
   def actorRefFactory = system
@@ -43,14 +42,10 @@ class SprayCommandResponseSpec extends SpecificationWithJUnit
     Props(new SprayCommandResponseTestCommand))(actorRefFactory)
   val testActor = testCommandRef.underlyingActor
 
-  "SprayCommandResponse " should {
-
-    "use specified status code and headers" in {
-      Get("/test/SprayCommandResponse") ~> RouteManager.getRoute("SprayCommandResponseTest_get").get ~> check {
-        status mustEqual StatusCodes.Accepted
-        headers.exists( h => h.name == "custom" && h.value == "header") must beTrue
-      }
+  test("use specified status code and headers") {
+    Get("/test/SprayCommandResponse") ~> RouteManager.getRoute("SprayCommandResponseTest_get").get ~> check {
+      assert(status == StatusCodes.Accepted)
+      assert(headers.exists(h => h.name == "custom" && h.value == "header"))
     }
-
   }
 }

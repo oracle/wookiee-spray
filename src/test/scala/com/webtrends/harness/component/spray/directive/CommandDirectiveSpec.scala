@@ -21,18 +21,18 @@ package com.webtrends.harness.component.spray.directive
 
 import akka.testkit.TestKit
 import com.webtrends.harness.command.CommandBean
-import org.specs2.mutable.SpecificationWithJUnit
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import spray.http._
 import spray.httpx.RequestBuilding
-import spray.testkit.Specs2RouteTest
+import spray.testkit.ScalatestRouteTest
 
 /**
  * @author Michael Cuthbert on 12/12/14.
  */
-class CommandDirectiveSpec extends SpecificationWithJUnit
-    with Specs2RouteTest
+class CommandDirectiveSpec extends FunSuite
+    with ScalatestRouteTest
     with CommandDirectives
-    with RequestBuilding {
+    with RequestBuilding with BeforeAndAfterAll {
 
   val pathMap = Map(
     "path1" -> "/test/path1",
@@ -47,185 +47,177 @@ class CommandDirectiveSpec extends SpecificationWithJUnit
   )
   // for the empty list case
   val testHeadersEmpty = Map[String, List[HttpHeader]]()
-
-  "The commandPath directive" should {
-    "respond OK on valid path" in {
-      Get("/test/path") ~> {
-        commandPath("/test/path/") {
-          bean => complete("test")
-        }
-      } ~> check {
-        status == StatusCodes.OK
+  
+  test("respond OK on valid path") {
+    Get("/test/path") ~> {
+      commandPath("/test/path/") {
+        _ => complete("test")
       }
-    }
-
-    "reject invalid path" in {
-      Get("/test/path") ~> {
-        commandPath("/test/path2/") {
-          bean => complete("test")
-        }
-      } ~> check {
-        handled must beFalse
-      }
-    }
-
-    "respond with string SEGMENT url in bean" in {
-      Get("/test/seg/path") ~> {
-        commandPath("/test/$key/path") {
-          bean => complete(s"${bean.get("key").get}")
-        }
-      } ~> check {
-        status == StatusCodes.OK
-        body.asString == "seg"
-      }
-    }
-
-    "respond with multiple string SEGMENT url in bean" in {
-      Get("/test/seg/path/seg2") ~> {
-        commandPath("/test/$key1/path/$key2") {
-          bean => complete(s"${bean.get("key1").get}-${bean.get("key2").get}")
-        }
-      } ~> check {
-        status == StatusCodes.OK
-        body.asString == "seg-seg2"
-      }
-    }
-
-    "respond with int SEGMENT url in bean" in {
-      Get("/test/1234/path") ~> {
-        commandPath("/test/$key/path") {
-          bean =>
-            bean.get("key").get match {
-              case x:Integer => complete(x.toString)
-              case _ => complete("NA")
-            }
-        }
-      } ~> check {
-        status == StatusCodes.OK
-        body.asString == "1234"
-      }
-    }
-
-    "reject invalid path with SEGMENT" in {
-      Get("/test/path") ~> {
-        commandPath("/test/$key/path") {
-          bean => complete("test")
-        }
-      } ~> check {
-        handled must beFalse
-      }
-    }
-
-    "respond OK with valid options path" in {
-      Get("/test/path1") ~> {
-        commandPath("/test/path1|path2") {
-          bean => complete("test")
-        }
-      } ~> check {
-        handled must beTrue
-      }
-    }
-
-    "reject invalid options path" in {
-      Get("/test/path1") ~> {
-        commandPath("/test/path2|path3") {
-          bean => complete("test")
-        }
-      } ~> check {
-        handled must beFalse
-      }
+    } ~> check {
+      status == StatusCodes.OK
     }
   }
 
-  "The commandPaths directive" should {
-    "reject any non-matching paths" in {
-      Get("/test/path3") ~> {
-        commandPaths(pathMap) {
-          bean => complete("path3")
-        }
-      } ~> check {
-        handled must beFalse
+  test("reject invalid path") {
+    Get("/test/path") ~> {
+      commandPath("/test/path2/") {
+        _ => complete("test")
       }
-    }
-
-    "accept any matching paths" in {
-      Get("/path1/test") ~> {
-        commandPaths(pathMap) {
-          bean => complete(bean.get(CommandBean.KeyPath).get.toString)
-        }
-      } ~> check {
-        body.asString == "path2"
-        handled must beTrue
-      }
-    }
-
-    "do variable substitution on matching path" in {
-      Get("/varpath/test1/1") ~> {
-        commandPaths(pathMap) {
-          bean => complete(s"${bean.get(CommandBean.KeyPath).get}-${bean.get("var1").get}-${bean.get("var2").get}")
-        }
-      } ~> check {
-        body.asString == "path3-test1-1"
-        handled must beTrue
-      }
+    } ~> check {
+      assert(!handled)
     }
   }
 
-  "The command header directive" should {
-    "Get request should respond with GET header" in {
-      Get("/test") ~> {
-        mapHeaders(testHeaders) {
-          complete("headers")
-        }
-      } ~> check {
-        val rH = header("Access-Control-Allow-Methods") match {
-          case Some(s) =>
-            val headerMethods = s.asInstanceOf[HttpHeaders.`Access-Control-Allow-Methods`].methods
-            headerMethods.contains(HttpMethods.GET) && !headerMethods.contains(HttpMethods.POST)
-          case None => false
-        }
-        rH must beTrue
-        val rH2 = header("Cache-Control") match {
-          case Some(s) => s.asInstanceOf[HttpHeaders.`Cache-Control`].directives.contains(CacheDirectives.`no-cache`)
-          case None => false
-        }
-        rH2 must beTrue
+  test("respond with string SEGMENT url in bean") {
+    Get("/test/seg/path") ~> {
+      commandPath("/test/$key/path") {
+        bean => complete(s"${bean("key")}")
       }
-    }
-
-    "Post request should respond with Options header" in {
-      Post("/test") ~> {
-        mapHeaders(testHeaders) {
-          complete("headers")
-        }
-      } ~> check {
-        val rH = header("Access-Control-Allow-Methods") match {
-          case Some(s) =>
-            val headerMethods = s.asInstanceOf[HttpHeaders.`Access-Control-Allow-Methods`].methods
-            !headerMethods.contains(HttpMethods.GET) && headerMethods.contains(HttpMethods.POST)
-          case None => false
-        }
-        rH must beTrue
-        val rH2 = header("Cache-Control") match {
-          case Some(s) => s.asInstanceOf[HttpHeaders.`Cache-Control`].directives.contains(CacheDirectives.`no-cache`)
-          case None => false
-        }
-        rH2 must beTrue
-      }
-    }
-
-    "Get request with empty header set should succeed" in {
-      Get("/test") ~> {
-        mapHeaders(testHeadersEmpty) {
-          complete("headers")
-        }
-      } ~> check {
-        handled must beTrue
-      }
+    } ~> check {
+      status == StatusCodes.OK
+      body.asString == "seg"
     }
   }
 
-  step {
-    TestKit.shutdownActorSystem(system)
+  test("respond with multiple string SEGMENT url in bean") {
+    Get("/test/seg/path/seg2") ~> {
+      commandPath("/test/$key1/path/$key2") {
+        bean => complete(s"${bean("key1")}-${bean("key2")}")
+      }
+    } ~> check {
+      status == StatusCodes.OK
+      body.asString == "seg-seg2"
+    }
   }
+
+  test("respond with int SEGMENT url in bean") {
+    Get("/test/1234/path") ~> {
+      commandPath("/test/$key/path") {
+        bean =>
+          bean("key") match {
+            case x:Integer => complete(x.toString)
+            case _ => complete("NA")
+          }
+      }
+    } ~> check {
+      status == StatusCodes.OK
+      body.asString == "1234"
+    }
+  }
+
+  test("reject invalid path with SEGMENT") {
+    Get("/test/path") ~> {
+      commandPath("/test/$key/path") {
+        _ => complete("test")
+      }
+    } ~> check {
+      assert(!handled)
+    }
+  }
+
+  test("respond OK with valid options path") {
+    Get("/test/path1") ~> {
+      commandPath("/test/path1|path2") {
+        _ => complete("test")
+      }
+    } ~> check {
+      assert(handled)
+    }
+  }
+
+  test("reject invalid options path") {
+    Get("/test/path1") ~> {
+      commandPath("/test/path2|path3") {
+        _ => complete("test")
+      }
+    } ~> check {
+      assert(!handled)
+    }
+  }
+
+  test("reject any non-matching paths") {
+    Get("/test/path3") ~> {
+      commandPaths(pathMap) {
+        _ => complete("path3")
+      }
+    } ~> check {
+      assert(!handled)
+    }
+  }
+
+  test("accept any matching paths") {
+    Get("/path1/test") ~> {
+      commandPaths(pathMap) {
+        bean => complete(bean(CommandBean.KeyPath).toString)
+      }
+    } ~> check {
+      body.asString == "path2"
+      assert(handled)
+    }
+  }
+
+  test("do variable substitution on matching path") {
+    Get("/varpath/test1/1") ~> {
+      commandPaths(pathMap) {
+        bean => complete(s"${bean(CommandBean.KeyPath)}-${bean("var1")}-${bean("var2")}")
+      }
+    } ~> check {
+      body.asString == "path3-test1-1"
+      assert(handled)
+    }
+  }
+
+  test("Get request should respond with GET header") {
+    Get("/test") ~> {
+      mapHeaders(testHeaders) {
+        complete("headers")
+      }
+    } ~> check {
+      val rH = header("Access-Control-Allow-Methods") match {
+        case Some(s) =>
+          val headerMethods = s.asInstanceOf[HttpHeaders.`Access-Control-Allow-Methods`].methods
+          headerMethods.contains(HttpMethods.GET) && !headerMethods.contains(HttpMethods.POST)
+        case None => false
+      }
+      assert(rH)
+      val rH2 = header("Cache-Control") match {
+        case Some(s) => s.asInstanceOf[HttpHeaders.`Cache-Control`].directives.contains(CacheDirectives.`no-cache`)
+        case None => false
+      }
+      assert(rH2)
+    }
+  }
+
+  test("Post request should respond with Options header") {
+    Post("/test") ~> {
+      mapHeaders(testHeaders) {
+        complete("headers")
+      }
+    } ~> check {
+      val rH = header("Access-Control-Allow-Methods") match {
+        case Some(s) =>
+          val headerMethods = s.asInstanceOf[HttpHeaders.`Access-Control-Allow-Methods`].methods
+          !headerMethods.contains(HttpMethods.GET) && headerMethods.contains(HttpMethods.POST)
+        case None => false
+      }
+      assert(rH)
+      val rH2 = header("Cache-Control") match {
+        case Some(s) => s.asInstanceOf[HttpHeaders.`Cache-Control`].directives.contains(CacheDirectives.`no-cache`)
+        case None => false
+      }
+      assert(rH2)
+    }
+  }
+
+  test("Get request with empty header set should succeed") {
+    Get("/test") ~> {
+      mapHeaders(testHeadersEmpty) {
+        complete("headers")
+      }
+    } ~> check {
+      assert(handled)
+    }
+  }
+
+  override protected def afterAll() = TestKit.shutdownActorSystem(system)
 }

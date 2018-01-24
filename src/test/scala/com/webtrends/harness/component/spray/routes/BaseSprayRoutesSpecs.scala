@@ -21,62 +21,60 @@ package com.webtrends.harness.component.spray.routes
 
 import akka.testkit.TestActorRef
 import com.webtrends.harness.component.spray.route.RouteManager
-import org.specs2.mutable.SpecificationWithJUnit
-import spray.routing.{HttpService, Directives}
-import spray.testkit.Specs2RouteTest
+import org.scalatest.{FunSuite, MustMatchers}
+import spray.routing.{Directives, HttpService}
+import spray.testkit.ScalatestRouteTest
 
 /**
  * @author Michael Cuthbert on 12/19/14.
  */
-class BaseSprayRoutesSpecs extends SpecificationWithJUnit with Directives with Specs2RouteTest with HttpService {
+class BaseSprayRoutesSpecs extends FunSuite with Directives with ScalatestRouteTest with HttpService with MustMatchers {
   def actorRefFactory = system
 
   val testCommandRef = TestActorRef[BaseTestCommand]
   val testActor = testCommandRef.underlyingActor
   val testCustomCommandRef = TestActorRef[CustomTestCommand]
   val testCustomActor = testCustomCommandRef.underlyingActor
-
-  "Test Command" should {
-    "should handle Get requests using SprayGet" in {
-      Get("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
-        handled must beTrue
-      }
+  
+  test("should handle Get requests using SprayGet") {
+    Get("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
+      handled mustBe true
     }
+  }
 
-    "should not handle Post requests using SprayGet" in {
-      Post("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
-        handled must beFalse
-      }
+  test("should not handle Post requests using SprayGet") {
+    Post("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
+      handled mustBe false
     }
+  }
 
-    "should handle Get requests with different keys using SprayGet" in {
-      Get("/foo/1234/bar/5678") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
-        handled must beTrue
-      }
+  test("should handle Get requests with different keys using SprayGet") {
+    Get("/foo/1234/bar/5678") ~> RouteManager.getRoute("BaseTest_get").get ~> check {
+      handled mustBe true
     }
+  }
 
-    "should handle custom requests from Command using SprayCustom" in {
-      Get("/foo/bar") ~> RouteManager.getRoute("CustomTest_custom").get ~> check {
-        handled must beTrue
-      }
+  test("should handle custom requests from Command using SprayCustom") {
+    Get("/foo/bar") ~> RouteManager.getRoute("CustomTest_custom").get ~> check {
+      handled mustBe true
     }
+  }
 
-    "should handle Head requests using SprayHead" in {
-      Head("/foo/key1/bar/kye2") ~> RouteManager.getRoute("BaseTest_head").get ~> check {
-        handled must beTrue
-      }
+  test("should handle Head requests using SprayHead") {
+    Head("/foo/key1/bar/kye2") ~> RouteManager.getRoute("BaseTest_head").get ~> check {
+      handled mustBe true
     }
+  }
 
-    "should handle Options requests using SprayOption" in {
-      Options("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_options").get ~> check {
-        handled must beTrue
-      }
+  test("should handle Options requests using SprayOption") {
+    Options("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_options").get ~> check {
+      handled mustBe true
     }
+  }
 
-    "should handle Patch requests using SprayPatch" in {
-      Patch("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_patch").get ~> check {
-        handled must beTrue
-      }
+  test("should handle Patch requests using SprayPatch") {
+    Patch("/foo/key1/bar/key2") ~> RouteManager.getRoute("BaseTest_patch").get ~> check {
+      handled mustBe true
     }
   }
 }
