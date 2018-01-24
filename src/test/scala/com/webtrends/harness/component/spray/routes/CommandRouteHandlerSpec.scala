@@ -1,12 +1,12 @@
 package com.webtrends.harness.component.spray.routes
 
 import akka.testkit.TestActorRef
-import com.webtrends.harness.command.{CommandException, CommandBean, Command}
+import com.webtrends.harness.command.{Command, CommandBean, CommandException}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
-import com.webtrends.harness.component.spray.route.{CommandRouteHandler, SprayGet, RouteManager}
-import org.specs2.mutable.SpecificationWithJUnit
+import com.webtrends.harness.component.spray.route.{CommandRouteHandler, RouteManager, SprayGet}
+import org.scalatest.{FunSuite, MustMatchers}
 import spray.routing.{Directives, HttpService}
-import spray.testkit.Specs2RouteTest
+import spray.testkit.ScalatestRouteTest
 
 import scala.concurrent.Future
 
@@ -30,28 +30,23 @@ class ExceptionDebugCommand extends Command with SprayGet with CommandRouteHandl
   }
 }
 
-class CommandRouteHandlerSpec extends SpecificationWithJUnit with Directives with Specs2RouteTest with HttpService {
+class CommandRouteHandlerSpec extends FunSuite with Directives with ScalatestRouteTest with HttpService with MustMatchers {
   def actorRefFactory = system
 
   TestActorRef[ExceptionCommand]
   TestActorRef[ExceptionDebugCommand]
 
-  "Default exception handler" should {
-    "not include exception details in response" in {
-      Get("/test/ExceptionCommand") ~> RouteManager.getRoute("ExceptionCommand_get").get ~> check {
-        status.intValue mustEqual 500
-        responseAs[String] must not contain("Do not leak this")
-      }
+  test("not include exception details in response") {
+    Get("/test/ExceptionCommand") ~> RouteManager.getRoute("ExceptionCommand_get").get ~> check {
+      status.intValue mustEqual 500
+      responseAs[String] must not contain("Do not leak this")
     }
   }
 
-  "debug exception handler" should {
-    "include exception details in response" in {
-      Get("/test/ExceptionDebugCommand") ~> RouteManager.getRoute("ExceptionDebugCommand_get").get ~> check {
-        status.intValue mustEqual 500
-        responseAs[String] must contain("Leak this")
-      }
+  test("include exception details in response") {
+    Get("/test/ExceptionDebugCommand") ~> RouteManager.getRoute("ExceptionDebugCommand_get").get ~> check {
+      status.intValue mustEqual 500
+      responseAs[String] must contain("Leak this")
     }
   }
-
 }

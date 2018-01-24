@@ -1,17 +1,15 @@
 package com.webtrends.harness.component.spray.directive
 
-import java.util.concurrent.TimeUnit
-
 import akka.testkit.TestActorRef
 import com.webtrends.harness.command.{Command, CommandBean}
 import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route.{RouteManager, SprayGet}
 import org.json4s.JObject
-import org.specs2.mutable.SpecificationWithJUnit
+import org.scalatest.{FunSuite, MustMatchers}
 import spray.http.HttpHeaders.{Origin, RawHeader, `Access-Control-Request-Headers`}
 import spray.http._
 import spray.routing.{Directives, HttpService}
-import spray.testkit.Specs2RouteTest
+import spray.testkit.ScalatestRouteTest
 
 import scala.concurrent.Future
 
@@ -92,10 +90,11 @@ class CORSException extends Command with SprayGet with CORS {
   }
 }
 
-class CORSSpec extends SpecificationWithJUnit
-with Directives
-with Specs2RouteTest
-with HttpService {
+class CORSSpec extends FunSuite
+  with Directives
+  with ScalatestRouteTest
+  with HttpService
+  with MustMatchers {
 
   def actorRefFactory = system
 
@@ -105,156 +104,144 @@ with HttpService {
   val customResponseHeaders = TestActorRef[CORSCustomResponseHeaders]
   val exception = TestActorRef[CORSException]
 
-  "CORS pre-flight request default behavior" should {
 
-    "Allow request to pass through but do not insert CORS response headers when Origin request header is missing" in {
-      Options("/test/CORSDefault") ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
-        status mustEqual StatusCodes.OK
+  test("Allow request to pass through but do not insert CORS response headers when Origin request header is missing") {
+    Options("/test/CORSDefault") ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
+      status mustEqual StatusCodes.OK
 
-        // This is inserted by wookiee-spray route management, not the CORS Directive
-        headers.find(_.name == "Access-Control-Allow-Methods").get.value mustEqual "GET, OPTIONS"
+      // This is inserted by wookiee-spray route management, not the CORS Directive
+      headers.find(_.name == "Access-Control-Allow-Methods").get.value mustEqual "GET, OPTIONS"
 
-        headers.exists(_.name == "Access-Control-Allow-Origin") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Credentials") must beFalse
-        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
-      }
-    }
-
-    "Include default response headers when only Origin request header is present" in {
-
-      HttpRequest(
-        HttpMethods.OPTIONS,
-        "/test/CORSDefault",
-        List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
-        None
-      ) ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
-        status mustEqual StatusCodes.OK
-        headers.find(_.name == "Access-Control-Allow-Methods").get.value mustEqual "GET, OPTIONS"
-        headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
-        headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
-        headers.find(_.name == "Access-Control-Max-Age").get.value mustEqual String.valueOf(Long.MaxValue)
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
-      }
-    }
-
-    "Echo back Access-Control-Request-Headers in Access-Control-Allow-Headers" in {
-
-      HttpRequest(
-        HttpMethods.OPTIONS,
-        "/test/CORSDefault",
-        List(
-          Origin(Seq(HttpOrigin("http://www.foo.test"))),
-          `Access-Control-Request-Headers`(Seq("A", "B", "C"))
-        ),
-        None
-      ) ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
-        status mustEqual StatusCodes.OK
-        headers.find(_.name == "Access-Control-Allow-Headers").get.value mustEqual "A, B, C"
-      }
+      headers.exists(_.name == "Access-Control-Allow-Origin") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Credentials") mustBe false
+      headers.exists(_.name == "Access-Control-Max-Age") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+      headers.exists(_.name == "Access-Control-Expose-Headers") mustBe false
     }
   }
 
-  "CORS customized pre-flight behavior" should {
+  test("Include default response headers when only Origin request header is present") {
 
-    "Reject requests with no Origin if non CORS request are disabled" in {
-      Options("/test/CORSRejectNoOrigin") ~> RouteManager.getRoute("CORSRejectNoOrigin_options").get ~> check {
-        status mustEqual StatusCodes.Unauthorized
-      }
+    HttpRequest(
+      HttpMethods.OPTIONS,
+      "/test/CORSDefault",
+      List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
+      None
+    ) ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
+      status mustEqual StatusCodes.OK
+      headers.find(_.name == "Access-Control-Allow-Methods").get.value mustEqual "GET, OPTIONS"
+      headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
+      headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
+      headers.find(_.name == "Access-Control-Max-Age").get.value mustEqual String.valueOf(Long.MaxValue)
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+      headers.exists(_.name == "Access-Control-Expose-Headers") mustBe false
     }
   }
 
-  "CORS resource request default behavior" should {
+  test("Echo back Access-Control-Request-Headers in Access-Control-Allow-Headers") {
 
-    "Allow request to pass through but do not insert CORS response headers when Origin request header is missing" in {
-      Get("/test/CORSDefault") ~> RouteManager.getRoute("CORSDefault_get").get ~> check {
-        status mustEqual StatusCodes.OK
-
-        headers.exists(_.name == "Access-Control-Allow-Methods") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Origin") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Credentials") must beFalse
-        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
-      }
-    }
-
-    "Include default response headers when Origin request header is present" in {
-      HttpRequest(
-        HttpMethods.GET,
-        "/test/CORSDefault",
-        List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
-        None
-      ) ~> RouteManager.getRoute("CORSDefault_get").get ~> check {
-        status mustEqual StatusCodes.OK
-        headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
-        headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
-        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
-      }
-    }
-
-    "Add Access-Control-Expose-Headers " in {
-
-      HttpRequest(
-        HttpMethods.GET,
-        "/test/CORSCustomResponseHeaders",
-        List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
-        None
-      ) ~> RouteManager.getRoute("CORSCustomResponseHeaders_get").get ~> check {
-        status mustEqual StatusCodes.OK
-        headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
-        headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
-        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-
-        headers.exists(_.name == "X-Custom1") must beTrue
-        headers.exists(_.name == "X-Custom2") must beTrue
-        headers.find(_.name == "Access-Control-Expose-Headers").get.value mustEqual "X-Custom1, X-Custom2"
-      }
+    HttpRequest(
+      HttpMethods.OPTIONS,
+      "/test/CORSDefault",
+      List(
+        Origin(Seq(HttpOrigin("http://www.foo.test"))),
+        `Access-Control-Request-Headers`(Seq("A", "B", "C"))
+      ),
+      None
+    ) ~> RouteManager.getRoute("CORSDefault_options").get ~> check {
+      status mustEqual StatusCodes.OK
+      headers.find(_.name == "Access-Control-Allow-Headers").get.value mustEqual "A, B, C"
     }
   }
 
-  "CORS resource request custom behavior" should {
-
-    "Reject requests with no Origin if non CORS request are disabled" in {
-      Get("/test/CORSRejectNoOrigin") ~> RouteManager.getRoute("CORSRejectNoOrigin_get").get ~> check {
-        status mustEqual StatusCodes.Unauthorized
-      }
-    }
-
-    "Reject requests with non matching origin" in {
-      HttpRequest(
-        HttpMethods.GET,
-        "/test/CORSLimitedAllowedOrigins",
-        List(Origin(Seq(HttpOrigin("http://www.d.com")))),
-        None
-      ) ~> RouteManager.getRoute("CORSLimitedAllowedOrigins_get").get ~> check {
-        status mustEqual StatusCodes.Unauthorized
-      }
+  test("Reject requests with no Origin if non CORS request are disabled") {
+    Options("/test/CORSRejectNoOrigin") ~> RouteManager.getRoute("CORSRejectNoOrigin_options").get ~> check {
+      status mustEqual StatusCodes.Unauthorized
     }
   }
 
-  "CORS resource request with failure" should {
+  test("Allow request to pass through but do not insert CORS response headers when Origin request header is missing, second") {
+    Get("/test/CORSDefault") ~> RouteManager.getRoute("CORSDefault_get").get ~> check {
+      status mustEqual StatusCodes.OK
 
-    "Include default response headers when Origin request header is present and command threw an exception" in {
+      headers.exists(_.name == "Access-Control-Allow-Methods") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Origin") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Credentials") mustBe false
+      headers.exists(_.name == "Access-Control-Max-Age") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+      headers.exists(_.name == "Access-Control-Expose-Headers") mustBe false
+    }
+  }
 
-      HttpRequest(
-        HttpMethods.GET,
-        "/test/CORSException",
-        List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
-        None
-      ) ~> RouteManager.getRoute("CORSException_get").get ~> check {
-        status mustEqual StatusCodes.InternalServerError
-        headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
-        headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
-        headers.exists(_.name == "Access-Control-Max-Age") must beFalse
-        headers.exists(_.name == "Access-Control-Allow-Headers") must beFalse
-        headers.exists(_.name == "Access-Control-Expose-Headers") must beFalse
-      }
+  test("Include default response headers when Origin request header is present") {
+    HttpRequest(
+      HttpMethods.GET,
+      "/test/CORSDefault",
+      List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
+      None
+    ) ~> RouteManager.getRoute("CORSDefault_get").get ~> check {
+      status mustEqual StatusCodes.OK
+      headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
+      headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
+      headers.exists(_.name == "Access-Control-Max-Age") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+      headers.exists(_.name == "Access-Control-Expose-Headers") mustBe false
+    }
+  }
+
+  test("Add Access-Control-Expose-Headers ") {
+
+    HttpRequest(
+      HttpMethods.GET,
+      "/test/CORSCustomResponseHeaders",
+      List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
+      None
+    ) ~> RouteManager.getRoute("CORSCustomResponseHeaders_get").get ~> check {
+      status mustEqual StatusCodes.OK
+      headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
+      headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
+      headers.exists(_.name == "Access-Control-Max-Age") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+
+      headers.exists(_.name == "X-Custom1") mustBe true
+      headers.exists(_.name == "X-Custom2") mustBe true
+      headers.find(_.name == "Access-Control-Expose-Headers").get.value mustEqual "X-Custom1, X-Custom2"
+    }
+  }
+
+
+  test("Reject requests with no Origin if non CORS request are disabled, second") {
+    Get("/test/CORSRejectNoOrigin") ~> RouteManager.getRoute("CORSRejectNoOrigin_get").get ~> check {
+      status mustEqual StatusCodes.Unauthorized
+    }
+  }
+
+  test("Reject requests with non matching origin") {
+    HttpRequest(
+      HttpMethods.GET,
+      "/test/CORSLimitedAllowedOrigins",
+      List(Origin(Seq(HttpOrigin("http://www.d.com")))),
+      None
+    ) ~> RouteManager.getRoute("CORSLimitedAllowedOrigins_get").get ~> check {
+      status mustEqual StatusCodes.Unauthorized
+    }
+  }
+
+
+  test("Include default response headers when Origin request header is present and command threw an exception") {
+
+    HttpRequest(
+      HttpMethods.GET,
+      "/test/CORSException",
+      List(Origin(Seq(HttpOrigin("http://www.foo.test")))),
+      None
+    ) ~> RouteManager.getRoute("CORSException_get").get ~> check {
+      status mustEqual StatusCodes.InternalServerError
+      headers.find(_.name == "Access-Control-Allow-Origin").get.value mustEqual "http://www.foo.test"
+      headers.find(_.name == "Access-Control-Allow-Credentials").get.value mustEqual "true"
+      headers.exists(_.name == "Access-Control-Max-Age") mustBe false
+      headers.exists(_.name == "Access-Control-Allow-Headers") mustBe false
+      headers.exists(_.name == "Access-Control-Expose-Headers") mustBe false
     }
   }
 }
