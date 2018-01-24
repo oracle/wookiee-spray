@@ -147,11 +147,6 @@
         </dependency>
         <dependency>
             <groupId>io.spray</groupId>
-            <artifactId>spray-routing_${scala.artifact.version}</artifactId>
-            <version>${spray.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.spray</groupId>
             <artifactId>spray-can_${scala.artifact.version}</artifactId>
             <version>${spray.version}</version>
         </dependency>
