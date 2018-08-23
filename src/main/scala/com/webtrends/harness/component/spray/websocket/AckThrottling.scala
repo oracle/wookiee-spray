@@ -43,7 +43,7 @@ trait AckThrottling extends ActorLogging with Stash {
     case msg => stash()
   }
 
-  def sendWithAck(frame: TextFrame): Unit = {
+  def sendWithAck(frame: Frame): Unit = {
     serverConnection ! Tcp.Write(FrameRender(frame), Ack)
     context.become(closeLogic orElse waitingForAck(frame) orElse stashing, discardOld = false)
   }
