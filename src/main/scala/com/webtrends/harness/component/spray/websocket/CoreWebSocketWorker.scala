@@ -7,7 +7,7 @@ import com.webtrends.harness.HarnessConstants
 import com.webtrends.harness.command.CommandBean
 import com.webtrends.harness.utils.ConfigUtil
 import spray.can.server.UHttp
-import spray.can.websocket.frame.TextFrame
+import spray.can.websocket.frame.{Frame, TextFrame}
 import spray.can.{Http, websocket}
 import spray.routing.HttpServiceActor
 
@@ -68,6 +68,8 @@ class CoreWebSocketWorker(val serverConnection: ActorRef) extends HttpServiceAct
   def businessLogic: Receive = {
     case Push(msg, _) =>
       sendWithAck(TextFrame(msg))
+    case PushFrame(f) =>
+      sendWithAck(f)
     case ev: Http.ConnectionClosed =>
       worker match {
         case Some(w) =>
