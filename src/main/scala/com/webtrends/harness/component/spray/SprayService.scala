@@ -49,7 +49,7 @@ trait SprayService extends HttpService with Service with WebSocketWorkerHelper w
     *
     * @return An instance of ServiceMetaDetails
    */
-  protected def getMetaDetails: ServiceMetaDetails = {
+  protected override def getMetaDetails: ServiceMetaDetails = {
     ServiceMetaDetails(!routes.equals(Map.empty))
   }
 }
