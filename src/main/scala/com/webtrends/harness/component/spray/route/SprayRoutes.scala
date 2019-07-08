@@ -193,9 +193,11 @@ trait SprayRoutes extends CommandDirectives
           complete(StatusCodes.Forbidden -> "")
         }
         else {
-          onComplete[BaseCommandResponse[T]](execute[T](Some(beanWithQuery)).mapTo[BaseCommandResponse[T]]) {
+          onComplete[SprayCommandResponse[T]](execute[T](Some(beanWithQuery)).map {
+            case r: SprayCommandResponse[T] => r
+            case b: BaseCommandResponse[T] => SprayCommandResponse(b.data)
+          }) {
             case Success(s) =>
-
               val (status, additionalHeaders) = s match {
                 case scr: SprayCommandResponse[T] =>
                   (scr.status, scr.additionalHeaders)
@@ -203,7 +205,6 @@ trait SprayRoutes extends CommandDirectives
                   val statusCode = if (s.data.nonEmpty) responseStatusCode else StatusCodes.NoContent
                   (statusCode, List.empty)
               }
-
               s.data match {
                 case Some(data) =>
                   val media = MediaTypes.forExtension(s.responseType) match {
