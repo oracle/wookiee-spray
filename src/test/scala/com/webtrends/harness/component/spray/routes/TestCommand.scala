@@ -21,6 +21,7 @@ package com.webtrends.harness.component.spray.routes
 
 import com.webtrends.harness.command._
 import com.webtrends.harness.component.spray.authentication.Token
+import com.webtrends.harness.component.spray.command.SprayCommandResponse
 import com.webtrends.harness.component.spray.route._
 import spray.http.ContentTypes
 import spray.httpx.marshalling.Marshaller
@@ -44,8 +45,8 @@ sealed abstract class TestCommand extends Command {
     Future {
       bean match {
         case Some(b) =>
-          CommandResponse[T](Some(b.asInstanceOf[T]), "json")
-        case None => CommandResponse[T](Some("NONE".asInstanceOf[T]), "txt")
+          SprayCommandResponse[T](Some(b.asInstanceOf[T]), "json")
+        case None => SprayCommandResponse[T](Some("NONE".asInstanceOf[T]), "txt")
       }
     }
   }
@@ -75,7 +76,7 @@ sealed abstract class EntityBase extends TestCommand {
       bean match {
         case Some(b) =>
           val testObj = b(CommandBean.KeyEntity).asInstanceOf[TestObject]
-          CommandResponse(Some(testObj.asInstanceOf[T]), "json")
+          SprayCommandResponse(Some(testObj.asInstanceOf[T]), "json")
         case None => throw CommandException("EntityTest", "No bean supplied")
       }
     }

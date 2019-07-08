@@ -19,7 +19,7 @@
         <scala.version>${scala.artifact.version}.12</scala.version>
         <scoverage.plugin.version>1.3.0</scoverage.plugin.version>
         <spray.version>1.3.4</spray.version>
-        <wookiee.core.version>1.3.35</wookiee.core.version>
+        <wookiee.core.version>1.3.36</wookiee.core.version>
         <wookiee.metrics.version>2.5.10</wookiee.metrics.version>
         <akka.version>2.5.4</akka.version>
     </properties>
