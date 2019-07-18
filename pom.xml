@@ -19,14 +19,18 @@
         <scala.version>${scala.artifact.version}.12</scala.version>
         <scoverage.plugin.version>1.3.0</scoverage.plugin.version>
         <spray.version>1.3.4</spray.version>
+        <!--
         <wookiee.core.version>1.3.36</wookiee.core.version>
         <wookiee.metrics.version>2.5.11</wookiee.metrics.version>
+        -->
+        <wookiee.core.version>1.3-jb_akkaUpdate-SNAPSHOT</wookiee.core.version>
+        <wookiee.metrics.version>2.5-jb_akkaUpdate-SNAPSHOT</wookiee.metrics.version>
         <akka.version>2.5.4</akka.version>
     </properties>
 
     <groupId>com.webtrends</groupId>
     <artifactId>wookiee-spray</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3-jb_akkaUpdate-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Component: Spray (HTTP)</name>
     <description>HTTP support in Wookiee provided by Spray and automatic command routing.</description>
