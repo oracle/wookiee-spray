@@ -198,13 +198,7 @@ trait SprayRoutes extends CommandDirectives
             case b: BaseCommandResponse[T] => SprayCommandResponse(b.data)
           }) {
             case Success(s) =>
-              val (status, additionalHeaders) = s match {
-                case scr: SprayCommandResponse[T] =>
-                  (scr.status, scr.additionalHeaders)
-                case cr: CommandResponse[T] =>
-                  val statusCode = if (s.data.nonEmpty) responseStatusCode else StatusCodes.NoContent
-                  (statusCode, List.empty)
-              }
+              val (status, additionalHeaders) = (s.status, s.additionalHeaders)
               s.data match {
                 case Some(data) =>
                   val media = MediaTypes.forExtension(s.responseType) match {
