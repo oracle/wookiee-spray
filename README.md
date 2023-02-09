@@ -10,6 +10,9 @@ The Spray component has both server and client http functionality. The server co
 
 For working example see [Wookiee - Http Example](example-http) or [Wookiee - Rest Example](example-rest)
 
+## Contributing
+This project is not accepting external contributions at this time. For bugs or enhancement requests, please file a GitHub issue unless it’s security related. When filing a bug remember that the better written the bug is, the more likely it is to be fixed. If you think you’ve found a security vulnerability, do not raise a GitHub issue and follow the instructions in our [security policy](./SECURITY.md).
+
 ## Config
 ```json
 wookiee-spray {
@@ -156,3 +159,7 @@ class MyService extends SprayService {
   }
 }
 ```
+
+## License
+Copyright (c) 2004 Oracle and/or its affiliates.
+Released under the Apache License Version 2.0
